@@ -1,0 +1,106 @@
+/* @page { @top-right{ content: "Page " counter(page) " of " counter(pages); } }  */
+@page {
+  size: "A4";
+  margin: 2cm 2.2cm 3.5cm 2cm;
+  @bottom-right {
+    content: "Página " counter(page) "/" counter(pages);
+    font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+  }
+  @bottom-left {
+    content: "SIAC UTPL";
+    font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+  }
+}
+
+body {
+  width: 100% !important;
+  height: 100%;
+  background: #fff;
+  color: black;
+  font-size: 90%;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: none;
+  font-family: "Helvetica", sans-serif !important;
+}
+
+#fila_resaltada {
+  background-color: #f5f2f1;
+}
+
+.text-primary {
+  color: #003f72 !important;
+  margin-left: 40px;
+  font-weight: 700 !important;
+}
+
+h4.text-primary {
+  font-weight: bold;
+}
+
+h4.informaciontitulo {
+  color: #003f72 !important;
+  margin-left: -80px;
+  margin-top: 60px;
+}
+
+
+
+#contenedor {
+  text-align: left;
+  width: 100%;
+  margin: auto;
+}
+
+#principal {
+  width: 70%;
+  float: left;
+  margin-left: 70px;
+  background-color: #ffffff;
+}
+
+#lateral {
+  width: 30%;
+  float: right;
+}
+
+.clearfix:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+#logo {
+  width: 30%;
+  float: right;
+  margin-top: -90px;
+}
+
+/* Informacion docente */
+#informacionDocente {
+  width: 150%;
+  margin-left: -70px;
+  margin-bottom: 30px;
+}
+#fotoDocente {
+  width: 65%;
+  height: 160px;
+  float: left;
+  margin-left: -90px;
+  margin-top: 10px;
+}
+
+#columnas {
+  margin-left: 70px;
+  margin-top: 60px;
+
+}
+
+#informacionDatos {
+  text-align: left;
+}
+
+#informacionDatos h3 {
+  color: #003f72;
+  font-style: italic;
+}
