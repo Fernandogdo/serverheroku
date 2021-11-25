@@ -35,12 +35,13 @@ from django.shortcuts import render
 import json
 from datetime import datetime
 import csv
-from django.http import FileResponse
+# from django.http import FileResponse
 #from htmldocx import HtmlToDocx
 from docxtpl import DocxTemplate, InlineImage
 from docx.shared import Mm
 from bibtexparser.bwriter import BibTexWriter
 from bibtexparser.bibdatabase import BibDatabase
+from django.shortcuts import redirect
 
 
 class AdministradorView(viewsets.ModelViewSet):
@@ -2073,7 +2074,7 @@ def InformacionCsv(request, id):
                      headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'})
     docente = r.json()
 
-    '''Saca id Articulos '''
+    '''Saca id Artmodel_dicticulos '''
     listaidArticulos = []
     for infobloque in docente['related']['articulos']:
         listaidArticulos.append(infobloque)
@@ -2358,3 +2359,18 @@ def generaBibTex(request, id):
     response['Content-Disposition'] = 'attachment; filename="file.bib"' 
 
     return response
+
+
+
+
+
+def pruebaSql(request, nombre_cv, cv ):
+    model_dict = models.ConfiguracionCv_Personalizado.objects.filter(nombre_cv = nombre_cv).filter(cv=cv)
+
+    print(model_dict)
+    model_dict.delete()
+    print(nombre_cv, cv)
+
+    print("BOORADO", model_dict)
+
+    return redirect('/api')
