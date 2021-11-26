@@ -2364,7 +2364,7 @@ def generaBibTex(request, id):
 
 
 
-def pruebaSql(request, nombre_cv, cv ):
+def eliminaPersonalizados(request, nombre_cv, cv ):
     model_dict = models.ConfiguracionCv_Personalizado.objects.filter(nombre_cv = nombre_cv).filter(cv=cv)
 
     print(model_dict)

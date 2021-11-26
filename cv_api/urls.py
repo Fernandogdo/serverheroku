@@ -36,7 +36,7 @@ urlpatterns = [
   path('pdf-personalizado/<int:id>/<slug:nombre_cv>/<slug:cvHash>', views.PdfPersonalizado),
   path('doc-personalizado/<int:id>/<slug:nombre_cv>/<slug:cvHash>', views.DocPersonalizado),
   path('json-personalizado/<int:id>/<slug:nombre_cv>/<slug:cvHash>', views.JsonPersonalizado),
-  path('pruebasql/<slug:nombre_cv>/<slug:cv>', views.pruebaSql),
+  path('elimina-personalizados/<slug:nombre_cv>/<slug:cv>', views.eliminaPersonalizados),
   path('crea-bibtext/<int:id>', views.generaBibTex),
   path('prueba/', views.prueba),
   re_path('^datausuario/(?P<id_user>.+)/$', views.getdata),
