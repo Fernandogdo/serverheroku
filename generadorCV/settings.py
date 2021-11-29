@@ -75,7 +75,7 @@ REST_FRAMEWORK = {
 }
 
 
-AUTH_USER_MODEL = "cv_api.Docente"
+AUTH_USER_MODEL = "cv_api.Usuario"
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -139,11 +139,11 @@ DATABASES = {
     'default': {
         # MySQL engine. Powered by the mysqlclient module.
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'bgihk3yzoak5mwbhydi3',
-        'USER': 'uttiqqtg12o2lrvu',
-        'PASSWORD': 'kYESn6Ykg30eDqDc8mc',
-        'HOST': 'bgihk3yzoak5mwbhydi3-mysql.services.clever-cloud.com',
-        'PORT': '20241',
+        'NAME': 'bgcwmzzgpo7zb622ry7r',
+        'USER': 'udmyclgmqneitwbl',
+        'PASSWORD': '4f2b4joDkQBmv6qgrug',
+        'HOST': 'bgcwmzzgpo7zb622ry7r-mysql.services.clever-cloud.com',
+        'PORT': '20538',
     }
 }
 
