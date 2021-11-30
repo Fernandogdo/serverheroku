@@ -1283,6 +1283,8 @@ def informacionCsvArticulos(request, id):
     return response  
 
 
+
+
 '''CSV LIBROS'''
 def informacionCsvLibros(request, id):
     r = requests.get(f'https://sica.utpl.edu.ec/ws/api/docentes/{id}/',
@@ -1343,31 +1345,31 @@ def informacionCsvLibros(request, id):
 
 
 
-''''''
-def informacionCsvCapacitacion(request, id):
+'''CSV CAPACITACION'''
+def informacionCsvProyectos(request, id):
     r = requests.get(f'https://sica.utpl.edu.ec/ws/api/docentes/{id}/',
                      headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'})
 
     docente = r.json()
 
     '''Saca id Libros '''
-    listaidLibros = []
-    for infoLibros in docente['related']['libros']:
-        listaidLibros.append(infoLibros)
+    listaidProyectos = []
+    for infoLibros in docente['related']['proyectos']:
+        listaidProyectos.append(infoLibros)
 
-    idsLibros = [fila['id'] for fila in listaidLibros]
+    idsLibros = [fila['id'] for fila in listaidProyectos]
 
 
     ''' Saca libros de docentes por ID'''
-    listaLibrosDocente = []
+    listaProyectosDocente = []
     for idLibro in idsLibros:
-        r = requests.get('https://sica.utpl.edu.ec/ws/api/libros/' + str(idLibro) + "/",
+        r = requests.get('https://sica.utpl.edu.ec/ws/api/proyectos/' + str(idLibro) + "/",
                          headers={
                              'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'}
                          )
         todos = r.json()
-        listaLibrosDocente.append(todos)
-        print('listaLibros------------>>>>>>>>>>>>>>>>>',listaLibrosDocente)
+        listaProyectosDocente.append(todos)
+        print('listaLibros------------>>>>>>>>>>>>>>>>>',listaProyectosDocente)
 
     response = HttpResponse(content_type='text/csv')  
     response['Content-Disposition'] = 'attachment; filename="file.csv"'  
@@ -1375,17 +1377,17 @@ def informacionCsvCapacitacion(request, id):
 
 
     lines = []
-    for libro in listaLibrosDocente:
+    for proyecto in listaProyectosDocente:
         # print("LISTAID---------___>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>.", lista['id'])
         try:
             const = {
-              'Title ': libro['titulo'],
-              'year' : str(libro['anio']),
-              'isbn' : libro['isbn'],
-              'Pages': libro["paginas"],
-              'link': libro['link_descarga_1'],
-              'link2': libro['link_descarga_2'],
-              'tipo_libro': libro['tipo_libro'],
+              'Title ': proyecto['nombre_proyecto'],
+              'year' : str(proyecto['fecha_cierre']),
+            #   'tematica' : proyecto['tematica'],
+              'programa': proyecto["programa"],
+            #   'link': proyecto['link'],
+              'tipo_proyecto': proyecto['tipo_proyecto'],
+              'estado': proyecto['estado'],
               'source': "siac utpl"
             }
             
@@ -1393,13 +1395,130 @@ def informacionCsvCapacitacion(request, id):
         except:
             print("asdassa")
 
-    writer.writerow(['Titulo', 'Year', 'ISBN', 'Pages', "Link", "Link2","Document Type", "Source"])
+    writer.writerow(['Titulo', 'Year', 'Temática', 'Pages', "Link", "Course Type", "Source"])
     for val in lines:
         print("i", val)
         writer.writerow(v for k, v in val.items())
 
     return response  
 
+
+
+
+
+'''CSV CAPACITACION'''
+def informacionCsvCapacitacion(request, id):
+    r = requests.get(f'https://sica.utpl.edu.ec/ws/api/docentes/{id}/',
+                     headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'})
+
+    docente = r.json()
+
+    '''Saca id Libros '''
+    listaidCapacitaciones = []
+    for infoLibros in docente['related']['capacitacion']:
+        listaidCapacitaciones.append(infoLibros)
+
+    idsLibros = [fila['id'] for fila in listaidCapacitaciones]
+
+
+    ''' Saca libros de docentes por ID'''
+    listaCapacitacionesDocente = []
+    for idLibro in idsLibros:
+        r = requests.get('https://sica.utpl.edu.ec/ws/api/capacitacion/' + str(idLibro) + "/",
+                         headers={
+                             'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'}
+                         )
+        todos = r.json()
+        listaCapacitacionesDocente.append(todos)
+        print('listaLibros------------>>>>>>>>>>>>>>>>>',listaCapacitacionesDocente)
+
+    response = HttpResponse(content_type='text/csv')  
+    response['Content-Disposition'] = 'attachment; filename="file.csv"'  
+    writer = csv.writer(response)  
+
+
+    lines = []
+    for capacitacion in listaCapacitacionesDocente:
+        # print("LISTAID---------___>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>.", lista['id'])
+        try:
+            const = {
+              'Title ': capacitacion['nombre'],
+              'year' : str(capacitacion['fecha_inicio']),
+              'tematica' : capacitacion['tematica'],
+              'Pages': capacitacion["paginas"],
+              'link': capacitacion['link'],
+              'tipo_curso': capacitacion['tipo_curso'],
+              'source': "siac utpl"
+            }
+            
+            lines.append(const)
+        except:
+            print("asdassa")
+
+    writer.writerow(['Titulo', 'Year', 'Temática', 'Pages', "Link", "Course Type", "Source"])
+    for val in lines:
+        print("i", val)
+        writer.writerow(v for k, v in val.items())
+
+    return response  
+
+
+
+'''CSV CAPACITACION'''
+def informacionCsvGradoAcademico(request, id):
+    r = requests.get(f'https://sica.utpl.edu.ec/ws/api/docentes/{id}/',
+                     headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'})
+
+    docente = r.json()
+
+    '''Saca id Libros '''
+    listaidCapacitaciones = []
+    for infoLibros in docente['related']['grado-academico']:
+        listaidCapacitaciones.append(infoLibros)
+
+    idsLibros = [fila['id'] for fila in listaidCapacitaciones]
+
+
+    ''' Saca libros de docentes por ID'''
+    listaCapacitacionesDocente = []
+    for idLibro in idsLibros:
+        r = requests.get('https://sica.utpl.edu.ec/ws/api/grado-academico/' + str(idLibro) + "/",
+                         headers={
+                             'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'}
+                         )
+        todos = r.json()
+        listaCapacitacionesDocente.append(todos)
+        print('listaLibros------------>>>>>>>>>>>>>>>>>',listaCapacitacionesDocente)
+
+    response = HttpResponse(content_type='text/csv')  
+    response['Content-Disposition'] = 'attachment; filename="file.csv"'  
+    writer = csv.writer(response)  
+
+
+    lines = []
+    for gradoAcademico in listaCapacitacionesDocente:
+        # print("LISTAID---------___>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>.", lista['id'])
+        try:
+            const = {
+              'Title ': gradoAcademico['denominacion_titulo'],
+              'year' : str(gradoAcademico['fecha_emision']),
+              'pais_u_reconocedora' : gradoAcademico['pais_u_reconocedora'],
+            #   'Pages': gradoAcademico["paginas"],
+              'universidad_emisora': gradoAcademico['universidad_emisora'],
+              'tipo_titulo': gradoAcademico['tipo_titulo'],
+              'source': "siac utpl"
+            }
+            
+            lines.append(const)
+        except:
+            print("asdassa")
+
+    writer.writerow(['Titulo', 'Fecha Emisión', 'País', 'Pages', "Universidad Emisora", "Course Type", "Source"])
+    for val in lines:
+        print("i", val)
+        writer.writerow(v for k, v in val.items())
+
+    return response  
 
 
 
@@ -1558,7 +1677,305 @@ def InformacionCsv(request, id):
     return response  
 
 
+def InformacionBibTexArticulos(request, id):
+    r = requests.get(f'https://sica.utpl.edu.ec/ws/api/docentes/{id}/',
+                     headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'})
+    docente = r.json()
 
+    print("DOCENTEBIBTEX", docente['primer_apellido'])
+
+    
+    '''Saca id Articulos '''
+    listaidArticulos = []
+    for infobloque in docente['related']['articulos']:
+        listaidArticulos.append(infobloque)
+
+    idsArticulos = [fila['id'] for fila in listaidArticulos]
+
+    ''' Saca articulos de docentes por ID'''
+    listaArticulosDocente = []
+    for id in idsArticulos:
+       r = requests.get('https://sica.utpl.edu.ec/ws/api/articulos/' + str(id) + "/",
+                        headers={
+                            'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'}
+                        )
+       todos = r.json()
+       listaArticulosDocente.append(todos)
+
+
+    lines = []
+
+    for articulo in listaArticulosDocente:
+        # print('REVIST-_____>>>>>>>>>>>>>>>>>>>>>', articulo['volume'])
+        try:
+            const = {
+              'journal ': articulo['revista'],
+            #   'comments' : articulo['abstract'],
+              'abstract' : articulo['abstract'],
+              'title   ' : articulo['titulo'],
+              'year    ' : str(articulo['year']),
+              'volume  ' : str(articulo['volume']),
+              'ID' : docente['primer_apellido'] + str(articulo['year']),
+              'keywords': articulo["keywords"],
+              'ENTRYTYPE': 'article'
+            }
+            lines.append(const)
+        except:
+            print("asdassa")
+
+    print(lines)
+    response = BibDatabase()
+    response.entries = lines
+    writer = BibTexWriter()
+    data = writer.write(response)
+
+    # with open('bibtex.bib', 'w') as bibfile:
+    #     bibfile.write(writer.write(db))
+    print("BIBFILE-------__>>>>>>>>", writer.write(response))
+    
+    response = HttpResponse(data, content_type='text/x-bibtex')  
+    response['Content-Disposition'] = 'attachment; filename="file.bib"' 
+
+    return response
+
+
+
+
+def InformacionBibTexLibros(request, id):
+    r = requests.get(f'https://sica.utpl.edu.ec/ws/api/docentes/{id}/',
+                     headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'})
+    docente = r.json()
+
+    print("DOCENTEBIBTEX", docente['primer_apellido'])
+
+    
+    '''Saca id Libros '''
+    listaidLibros = []
+    for infoLibros in docente['related']['libros']:
+        listaidLibros.append(infoLibros)
+
+    idsLibros = [fila['id'] for fila in listaidLibros]
+
+    ''' Saca articulos de docentes por ID'''
+    listaLibrosDocente = []
+    for id in idsLibros:
+       r = requests.get('https://sica.utpl.edu.ec/ws/api/libros/' + str(id) + "/",
+                        headers={
+                            'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'}
+                        )
+       todos = r.json()
+       listaLibrosDocente.append(todos)
+
+
+    lines = []
+
+    for libro in listaLibrosDocente:
+        const = {
+          'editorial ': libro['editorial'],
+          'comments' : "asdsa",
+          'abstract' : 'description test',
+          'title   ' : libro['titulo'],
+          'year    ' : str(libro['anio']),
+          'volume  ' : '1',
+          'ID' : "Marco Vinicio",
+          'ENTRYTYPE': 'book'
+        }
+        lines.append(const)
+
+    print(lines)
+    response = BibDatabase()
+    response.entries = lines
+    writer = BibTexWriter()
+    data = writer.write(response)
+
+    # with open('bibtex.bib', 'w') as bibfile:
+    #     bibfile.write(writer.write(db))
+    print("BIBFILE-------__>>>>>>>>", writer.write(response))
+    
+    response = HttpResponse(data, content_type='text/x-bibtex')  
+    response['Content-Disposition'] = 'attachment; filename="file.bib"' 
+
+    return response
+
+
+
+
+def InformacionBibTexProyectos(request, id):
+    r = requests.get(f'https://sica.utpl.edu.ec/ws/api/docentes/{id}/',
+                     headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'})
+    docente = r.json()
+
+    print("DOCENTEBIBTEX", docente['primer_apellido'])
+
+    
+    '''Saca id Libros '''
+    listaidLibros = []
+    for infoLibros in docente['related']['libros']:
+        listaidLibros.append(infoLibros)
+
+    idsLibros = [fila['id'] for fila in listaidLibros]
+
+    ''' Saca articulos de docentes por ID'''
+    listaProyectosDocente = []
+    for id in idsLibros:
+       r = requests.get('https://sica.utpl.edu.ec/ws/api/libros/' + str(id) + "/",
+                        headers={
+                            'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'}
+                        )
+       todos = r.json()
+       listaProyectosDocente.append(todos)
+
+
+    lines = []
+
+    for proyecto in listaProyectosDocente:
+        try:
+            const = {
+              'journal ': proyecto['descripcion'],
+              'comments' : proyecto['descripcion'],
+              'abstract' : proyecto['descripcion'],
+              'title   ' : proyecto['nombre_proyecto'],
+              'year    ' : str(proyecto['fecha_cierre']),
+              'volume  ' : '1',
+              'ID' : docente['primer_apellido'],
+              'ENTRYTYPE': 'proyect'
+            }
+            lines.append(const)
+        except:
+            print("asdassa")
+
+    print(lines)
+    response = BibDatabase()
+    response.entries = lines
+    writer = BibTexWriter()
+    data = writer.write(response)
+
+    # with open('bibtex.bib', 'w') as bibfile:
+    #     bibfile.write(writer.write(db))
+    print("BIBFILE-------__>>>>>>>>", writer.write(response))
+    
+    response = HttpResponse(data, content_type='text/x-bibtex')  
+    response['Content-Disposition'] = 'attachment; filename="file.bib"' 
+
+    return response
+
+
+def InformacionBibTexCapacitaciones(request, id):
+    r = requests.get(f'https://sica.utpl.edu.ec/ws/api/docentes/{id}/',
+                     headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'})
+    docente = r.json()
+
+    print("DOCENTEBIBTEX", docente['primer_apellido'])
+
+    
+    '''Saca id Libros '''
+    listaidLibros = []
+    for infoLibros in docente['related']['capacitacion']:
+        listaidLibros.append(infoLibros)
+
+    idsLibros = [fila['id'] for fila in listaidLibros]
+
+    ''' Saca articulos de docentes por ID'''
+    listaCapacitacionesDocente = []
+    for id in idsLibros:
+       r = requests.get('https://sica.utpl.edu.ec/ws/api/capacitacion/' + str(id) + "/",
+                        headers={
+                            'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'}
+                        )
+       todos = r.json()
+       listaCapacitacionesDocente.append(todos)
+
+
+    lines = []
+
+    for capacitacion in listaCapacitacionesDocente:
+        print("CAPACITACION", capacitacion)
+        const = {
+            'journal ': capacitacion['tematica'],
+            'comments' : capacitacion['comite_organizador'],
+            'abstract' : capacitacion['comite_organizador'],
+            'title   ' : capacitacion['nombre'],
+            'date    ' : capacitacion['fecha_fin'],
+            'volume  ' : '1',
+            'ID' : "Marco Vinicio",
+            'ENTRYTYPE': 'capacitation'
+        }
+        lines.append(const)
+
+    print(lines)
+    response = BibDatabase()
+    response.entries = lines
+    writer = BibTexWriter()
+    data = writer.write(response)
+
+    # with open('bibtex.bib', 'w') as bibfile:
+    #     bibfile.write(writer.write(db))
+    print("BIBFILE-------__>>>>>>>>", writer.write(response))
+    
+    response = HttpResponse(data, content_type='text/x-bibtex')  
+    response['Content-Disposition'] = 'attachment; filename="file.bib"' 
+
+    return response
+
+
+
+
+def InformacionBibTexGradoAcademico(request, id):
+    r = requests.get(f'https://sica.utpl.edu.ec/ws/api/docentes/{id}/',
+                     headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'})
+    docente = r.json()
+
+    print("DOCENTEBIBTEX", docente['primer_apellido'])
+
+    
+    '''Saca id Libros '''
+    listaidLibros = []
+    for infoLibros in docente['related']['grado-academico']:
+        listaidLibros.append(infoLibros)
+
+    idsLibros = [fila['id'] for fila in listaidLibros]
+
+    ''' Saca articulos de docentes por ID'''
+    listaGradoAcademicoDocente = []
+    for id in idsLibros:
+       r = requests.get('https://sica.utpl.edu.ec/ws/api/grado-academico/' + str(id) + "/",
+                        headers={
+                            'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'}
+                        )
+       todos = r.json()
+       listaGradoAcademicoDocente.append(todos)
+
+
+    lines = []
+
+    for gradoAcademico in listaGradoAcademicoDocente:
+        print("CAPACITACION", gradoAcademico)
+        const = {
+            'lugar_emision ': gradoAcademico['lugar_emision'],
+            'pais_u_reconocedora' : gradoAcademico['pais_u_reconocedora'],
+            'universidad_emisora' : gradoAcademico['universidad_emisora'],
+            'denominacion_titulo   ' : gradoAcademico['denominacion_titulo'],
+            'date    ' : gradoAcademico['fecha_emision'],
+            'volume  ' : '1',
+            'ID' : "Marco Vinicio",
+            'ENTRYTYPE': 'capacitation'
+        }
+        lines.append(const)
+
+    print(lines)
+    response = BibDatabase()
+    response.entries = lines
+    writer = BibTexWriter()
+    data = writer.write(response)
+
+    # with open('bibtex.bib', 'w') as bibfile:
+    #     bibfile.write(writer.write(db))
+    print("BIBFILE-------__>>>>>>>>", writer.write(response))
+    
+    response = HttpResponse(data, content_type='text/x-bibtex')  
+    response['Content-Disposition'] = 'attachment; filename="file.bib"' 
+
+    return response
 
 
 
