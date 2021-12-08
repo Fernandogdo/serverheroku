@@ -1,65 +1,41 @@
-from django.http import response
 from django.http.response import JsonResponse
 from django.shortcuts import render
-import docx
 from rest_framework import generics, viewsets
 from rest_framework.views import APIView
-from django.contrib.auth import login as django_login, logout as django_logout
+from django.contrib.auth import login as django_login
 from rest_framework.authtoken.models import Token
-from rest_framework.authentication import TokenAuthentication
 from rest_framework.response import Response
-from .serializers import ConfiguracionCv_PersonalizadoSerializer, LoginSerializer
-
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from .serializers import UsuarioSerializer
-# Create your views here.
-
 from . import models
 from . import serializers
 import requests
 from django.http import HttpResponse
-
 import pandas as pd
-from django.template.loader import get_template
-from django.template import Context
 from django.template.loader import render_to_string
 from weasyprint import HTML, CSS
 from django.conf import settings
-#from htmldocx import HtmlToDocx
-from docx import Document
-from docx.opc.part import Part
-from docx.opc.constants import RELATIONSHIP_TYPE as RT
-import json
-from pathlib import Path
-from django.shortcuts import render
 import json
 from datetime import datetime
 import csv
-from django.http import FileResponse
-#from htmldocx import HtmlToDocx
 from docxtpl import DocxTemplate, InlineImage
 from docx.shared import Mm
 from bibtexparser.bwriter import BibTexWriter
 from bibtexparser.bibdatabase import BibDatabase
 from django.shortcuts import redirect
-
-
-# class AdministradorView(viewsets.ModelViewSet):
-#     queryset = models.Administrador.objects.all()
-#     serializer_class = serializers.AdministradorSerializer
+import urllib.request
 
 
 class ConfiguracionCvView(viewsets.ModelViewSet):
-
     queryset = models.ConfiguracionCv.objects.all()
     serializer_class = serializers.ConfiguracionCvSerializer
     permission_classes = [IsAuthenticated]
 
-class ConfiguracionCv_PersonalizadoView(viewsets.ModelViewSet):
 
+class ConfiguracionCv_PersonalizadoView(viewsets.ModelViewSet):
     queryset = models.ConfiguracionCv_Personalizado.objects.all()
     serializer_class = serializers.ConfiguracionCv_PersonalizadoSerializer
     permission_classes = [IsAuthenticated]
+
 
 class UsarioView(viewsets.ModelViewSet):
     queryset = models.Usuario.objects.all()
@@ -78,10 +54,10 @@ class LoginView(APIView):
     permission_classes = []
 
     def post(self, request):
-        serializer = LoginSerializer(data=request.data)
+        serializer = serializers.LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data["user"]
-        test = UsuarioSerializer(user)
+        test = serializers.UsuarioSerializer(user)
         django_login(request, user)
         token, created = Token.objects.get_or_create(user=user)
         return Response({"token": token.key, "username": test.data}, status=200)
@@ -90,33 +66,24 @@ class LoginView(APIView):
 class BloqueView(viewsets.ModelViewSet):
     queryset = models.Bloque.objects.all()
     serializer_class = serializers.BloqueSerializer
-
     permission_classes = [IsAuthenticated]
 
 
 class PersonalizacionUsuario(generics.ListAPIView):
-    serializer_class = ConfiguracionCv_PersonalizadoSerializer
-    # queryset = models.ConfiguracionCv_Personalizado.objects.all()
-
+    serializer_class = serializers.ConfiguracionCv_PersonalizadoSerializer
     def get_queryset(self):
         id_user = self.kwargs['id_user']
         return models.ConfiguracionCv_Personalizado.objects.filter(id_user=id_user)
 
 
 class getdata(viewsets.ModelViewSet):
-    serializer_class = ConfiguracionCv_PersonalizadoSerializer
-    # queryset = models.ConfiguracionCv_Personalizado.objects.all()
-
+    serializer_class = serializers.ConfiguracionCv_PersonalizadoSerializer
     def get_queryset(self):
         id_user = self.kwargs['id_user']
-        # cv = self.kwargs['cv']
-        # print(cv)
-
         return models.ConfiguracionCv_Personalizado.objects.filter(id_user=id_user)
 
 
 # -------------------------------------------------------GENERACION DE INFORMACION-CONFIGURACION COMPLETA----------------------------------------------
-
 '''OBTIENE INFO CONFIGURACION COMPLETA'''
 def InformacionConfCompleto(id):
 
@@ -127,55 +94,41 @@ def InformacionConfCompleto(id):
                      headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'})
     docente = r.json()
 
-    '''Saca id Articulos '''
-    listaidArticulos = []
-    for infobloque in docente['related']['articulos']:
-        listaidArticulos.append(infobloque)
+    listaId = dict()
+    temp_data = []
+    bloquesLista = []
 
-    idsArticulos = [fila['id'] for fila in listaidArticulos]
+    for bloques_name in docente['related']:
+        bloquesLista.append(bloques_name)
 
-    '''Saca id Libros '''
-    listaidLibros = []
-    for infoLibros in docente['related']['libros']:
-        listaidLibros.append(infoLibros)
+    bloquesLista.sort()
+    '''RECORRE BLOQUES'''
+    for bloque in bloquesLista: 
+        lista_ids = [items['id'] for items in docente['related'][bloque]]
 
-    idsLibros = [fila['id'] for fila in listaidLibros]
+        for id in lista_ids:
+          data_tt = requests.get('https://sica.utpl.edu.ec/ws/api/'+ str(bloque) + "/" + str(id) + "/",
+                     headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'}
+                   )
+          temp_data.append(data_tt.json())
+        listaId[bloque] = temp_data
+        temp_data = []
 
-    ''' Saca articulos de docentes por ID'''
-    listaArticulosDocente = []
-    for id in idsArticulos:
-        r = requests.get('https://sica.utpl.edu.ec/ws/api/articulos/' + str(id) + "/",
-                         headers={
-                             'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'}
-                         )
-        todos = r.json()
-        listaArticulosDocente.append(todos)
-    #   print('listaArticulosDocente------------>>>>>>>>>>>>>>>>>',listaArticulosDocente)
+    bloquesTodos = []
+    for bloque in model_bloques:
+      bloquesTodos.append(bloque['nombre'])
 
-    ''' Saca libros de docentes por ID'''
-    listaLibrosDocente = []
-    for idLibro in idsLibros:
-        r = requests.get('https://sica.utpl.edu.ec/ws/api/libros/' + str(idLibro) + "/",
-                         headers={
-                             'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'}
-                         )
-        todos = r.json()
-        listaLibrosDocente.append(todos)
-        # print('listaArticulosDocente------------>>>>>>>>>>>>>>>>>',listaLibrosDocente)
+    bloquesTodos.sort()
 
     '''Cambia valores None por cadena ('None') '''
-    for i in listaLibrosDocente:
-        for key, value in i.items():
+    for claveLista, valorLista in listaId.items():
+        for valor in valorLista:
+          print(valor)
+          for key, value in valor.items():
             if value is None:
                 value = 'None'
-            i[key] = value
+            valor[key] = value
 
-    proyectos = []
-    Capacitacion = []
-    # ArticulosAutores = []
-    # LibrosAutores = []
-    GradoAcademico = []
-    # ProyectosParticipantes = []
 
     '''BLOQUES DE MODEL BLOQUES ORDENADOS '''
     ordenadosBloques = sorted(
@@ -184,7 +137,6 @@ def InformacionConfCompleto(id):
                       for b in ordenadosBloques]
 
     bloqueOrdenApi = [bloqueOrden for bloqueOrden in bloqueOrdenApi if list(bloqueOrden.values()) != [False]]
-
 
     listaBloques = [[x for x, v in i.items()] for i in bloqueOrdenApi]
     listaBloquesOrdenados = [y for x in listaBloques for y in x]
@@ -200,17 +152,17 @@ def InformacionConfCompleto(id):
         listaVisiblesAtr = [y for x in listaatrvisibles for y in x]
         diccionario[i] = listaVisiblesAtr
 
+    bloquesInformacion = dict()
+    cont = 0
+    for name_bloque, data_bloque in listaId.items():
+ 
+      bloquesInformacion[bloquesTodos[cont]] = data_bloque
+      cont+= 1
+  
     '''SACA MAPEO SI ATRIBUTO ES TRUE'''
     listadoBloques = dict()
     listaMapeados = dict()
-    bloquesInformacion = dict()
-
-    '''Tendria que recuperar los bloques que estan como visibles'''
-    bloquesInformacion['Articulos'] = listaArticulosDocente
-    bloquesInformacion['Proyectos'] = proyectos
-    bloquesInformacion['Capacitacion'] = Capacitacion
-    bloquesInformacion['Libros'] = listaLibrosDocente
-    bloquesInformacion['GradoAcademico'] = GradoAcademico
+    
 
     for i in listaBloquesOrdenados:
         mapeo = [{'mapeo': d['mapeo'], 'ordenCompleto': d['ordenCompleto']} for d in model_dict if d.get(
@@ -226,11 +178,7 @@ def InformacionConfCompleto(id):
         filtrados = [{atributo: d.get(atributo) for atributo in diccionario[i] if d.get(
             atributo) != None} for d in bloquesInformacion[i]]
         listadoBloques[i] = filtrados
-    # print('listaMapeados--->>>>>', listaMapeados)
-    # print('filtrados->>>>>>>>>>>>>>>>>>>>>>>', listadoBloques)
-    # print('listaMapeados--->>>>>', listaMapeados)
-    # print('filtrados->>>>>>>>>>>>>>>>>>>>>>>', listadoBloques)
-
+ 
     bloqueAtributos = dict()
     for listadoBloque in listadoBloques:
         bloqueAtributos[listadoBloque] = [{atributo: d.get(atributo) for atributo in diccionario[listadoBloque] if d.get(
@@ -240,18 +188,13 @@ def InformacionConfCompleto(id):
     for i in listaBloquesOrdenados:
         for filtrado in bloqueAtributos[i]:
             filtrado["mapeo"] = [fil for fil in listaMapeados[i]]
-            # filtrado["orden"] = [filtrado for filtrado in mapeados]
-    # print('bloqueAtributos----___>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>',bloqueAtributos)
 
     bloquesInfoRestante = {k: v for k, v in bloqueAtributos.items() if v != []}
-    # print('loquesquedan---------__>>>>>>>>>>>>', bloquesInfoRestante)
 
     bloquesRestantes = []
 
     for bloqueInfRes in bloquesInfoRestante:
         bloquesRestantes.append(bloqueInfRes)
-    # print('listadoBloques-----------__>>>>>>>>>>>>>>>>>',listadoBloques)
-    # print(bloquesRestantes)
 
     listaResultados = []
     listaFinal = list()
@@ -268,22 +211,7 @@ def InformacionConfCompleto(id):
         listaResultados = []
         tituloBloque = {}
 
-    # print(listaFinal)
-    # prueba(docente, listaFinal)
-
-    # '''Generacion de PDF'''
-    # logo = str(settings.BASE_DIR) + '/cv_api/templates/logoutpl.png'
-    # context = {'datos': listaResultados, 'logo': logo,
-    #            'docente': docente, 'listaFinal': listaFinal}
-    # html_string = render_to_string('home_page.html', context)
-    # html = HTML(string=html_string)
-    # pdf = html.write_pdf(stylesheets=[CSS(str(settings.BASE_DIR) +
-    #                                       '/cv_api/templates/css/pdf_gen.css')], presentational_hints=True)
-    # response = HttpResponse(pdf, content_type='application/pdf')
-    # response['Content-Disposition'] = 'inline; filename="mypdf.pdf"'
-
     return docente, listaFinal
-
 
 
 '''GENERA PDF COMPLETO'''
@@ -305,20 +233,21 @@ def PdfCompleto(request, id):
 
 
 '''DOCUMENTO WORD COMPLETO'''
+
 def DocCompleto(request, id):
     docente, listaFinal = InformacionConfCompleto(id)
     logo = str(settings.BASE_DIR) + '/cv_api/templates/logoutpl.png'
-    nieve = str(settings.BASE_DIR) + '/cv_api/templates/nieve.jpg'
+    img_template = str(settings.BASE_DIR) + '/cv_api/templates/nieve.jpg'
     response = HttpResponse(content_type='application/msword')
     response['Content-Disposition'] = 'attachment; filename="cv.docx"'
 
     doc = DocxTemplate(str(settings.BASE_DIR) + '/cv_api/templates/docx_filename.docx')
-    imagen = docente['foto_web_low'] 
-    # doc.replace_pic('dummy_header_pic.jpg','header_pic_i_want.jpg')
+    f = open(str(settings.BASE_DIR) + '/cv_api/templates/nieve.jpg','wb')
+    f.write(urllib.request.urlopen(docente['foto_web_low']).read()) 
+
     myimage = InlineImage(doc, image_descriptor=logo, width=Mm(15), height=Mm(25))
-    # doc.replace_pic(myimage, nieve)
-    context = {'listaFinal': listaFinal, 'docente': docente, 'var': logo, 'myimage': myimage}
-  
+    docente_img = InlineImage(doc, img_template, width=Mm(60), height=Mm(60))
+    context = {'listaFinal': listaFinal, 'docente': docente, 'var': logo, 'myimage': myimage, 'imagen':docente_img}
     doc.render(context)
     doc.save(response)
 
@@ -335,7 +264,6 @@ def JsonCompleto(request, id):
     listaDocente.append(docente)
     listaFinal.append(listaDocente)
 
-
     jsonString = json.dumps(listaFinal,  ensure_ascii=False).encode('utf8')
     print(jsonString)
     response = HttpResponse(jsonString.decode(), content_type='application/json')
@@ -345,62 +273,51 @@ def JsonCompleto(request, id):
 
 
 # -------------------------------------------------------GENERACION DE INFORMACION-CONFIGURACION RESUMIDA----------------------------------------------
-
 def InformacionConfResumida(id):
     model_dict = models.ConfiguracionCv.objects.all().values()
-    # print('model_dict',model_dict)
     model_bloques = models.Bloque.objects.all().values()
 
     r = requests.get(f'https://sica.utpl.edu.ec/ws/api/docentes/{id}/',
                      headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'})
     docente = r.json()
 
-    '''Saca id Articulos '''
-    listaidArticulos = []
-    for infobloque in docente['related']['articulos']:
-        listaidArticulos.append(infobloque)
+    listaId = dict()
+    temp_data = []
+    bloquesLista = []
 
-    idsArticulos = [fila['id'] for fila in listaidArticulos]
+    for bloques_name in docente['related']:
+        bloquesLista.append(bloques_name)
 
-    '''Saca id Libros '''
-    listaidLibros = []
-    for infoLibros in docente['related']['libros']:
-        listaidLibros.append(infoLibros)
+    bloquesLista.sort()
+    '''RECORRE BLOQUES'''
+    for bloque in bloquesLista: 
+        lista_ids = [items['id'] for items in docente['related'][bloque]]
 
-    idsLibros = [fila['id'] for fila in listaidLibros]
+        for id in lista_ids:
 
-    ''' Saca articulos de docentes por ID'''
-    listaArticulosDocente = []
-    for id in idsArticulos:
-        r = requests.get('https://sica.utpl.edu.ec/ws/api/articulos/' + str(id) + "/",
-                         headers={
-                             'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'}
-                         )
-        todos = r.json()
-        listaArticulosDocente.append(todos)
-    #   print('listaArticulosDocente------------>>>>>>>>>>>>>>>>>',listaArticulosDocente)
+          data_tt = requests.get('https://sica.utpl.edu.ec/ws/api/'+ str(bloque) + "/" + str(id) + "/",
+                     headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'}
+                   )
+          temp_data.append(data_tt.json())
 
-    ''' Saca libros de docentes por ID'''
-    listaLibrosDocente = []
-    for idLibro in idsLibros:
-        r = requests.get('https://sica.utpl.edu.ec/ws/api/libros/' + str(idLibro) + "/",
-                         headers={
-                             'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'}
-                         )
-        todos = r.json()
-        listaLibrosDocente.append(todos)
-        # print('listaArticulosDocente------------>>>>>>>>>>>>>>>>>',listaLibrosDocente)
+        listaId[bloque] = temp_data
+        temp_data = [] 
+
+    bloquesTodos = []
+    for bloque in model_bloques:
+      print("bloque", bloque['nombre'])
+      bloquesTodos.append(bloque['nombre'])
+
+    bloquesTodos.sort()
 
     '''Cambia valores None por cadena ('None') '''
-    for i in listaLibrosDocente:
-        for key, value in i.items():
+    for claveLista, valorLista in listaId.items():
+        for valor in valorLista:
+          print(valor)
+          for key, value in valor.items():
             if value is None:
                 value = 'None'
-            i[key] = value
-
-    proyectos = []
-    Capacitacion = []
-    GradoAcademico = []
+            valor[key] = value
 
     '''BLOQUES DE MODEL BLOQUES ORDENADOS '''
     ordenadosBloques = sorted(
@@ -424,17 +341,18 @@ def InformacionConfResumida(id):
         listaVisiblesAtr = [y for x in listaatrvisibles for y in x]
         diccionario[i] = listaVisiblesAtr
 
+
+    bloquesInformacion = dict()
+    cont = 0
+    for name_bloque, data_bloque in listaId.items():
+ 
+      bloquesInformacion[bloquesTodos[cont]] = data_bloque
+      cont+= 1
+  
+
     '''SACA MAPEO SI ATRIBUTO ES TRUE'''
     listadoBloques = dict()
     listaMapeados = dict()
-    bloquesInformacion = dict()
-
-    '''Tendria que recuperar los bloques que estan como visibles'''
-    bloquesInformacion['Articulos'] = listaArticulosDocente
-    bloquesInformacion['Proyectos'] = proyectos
-    bloquesInformacion['Capacitacion'] = Capacitacion
-    bloquesInformacion['Libros'] = listaLibrosDocente
-    bloquesInformacion['GradoAcademico'] = GradoAcademico
 
     for i in listaBloquesOrdenados:
         mapeo = [{'mapeo': d['mapeo'], 'ordenResumido': d['ordenResumido']} for d in model_dict if d.get(
@@ -449,7 +367,6 @@ def InformacionConfResumida(id):
         listaMapeados[i] = mapeados
         filtrados = [{atributo: d.get(atributo) for atributo in diccionario[i] if d.get(
             atributo) != None} for d in bloquesInformacion[i]]
-        # print('filtrados---___________>>>>>>>>>>>>>>>>>>>',filtrados)
 
         listadoBloques[i] = filtrados
 
@@ -462,18 +379,12 @@ def InformacionConfResumida(id):
     for i in listaBloquesOrdenados:
         for filtrado in bloqueAtributos[i]:
             filtrado["mapeo"] = [fil for fil in listaMapeados[i]]
-            # filtrado["orden"] = [filtrado for filtrado in mapeados]
-    # print('bloqueAtributos----___>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>',bloqueAtributos)
-
+        
     bloquesInfoRestante = {k: v for k, v in bloqueAtributos.items() if v != []}
-    # print('loquesquedan---------__>>>>>>>>>>>>', bloquesInfoRestante)
-
     bloquesRestantes = []
 
     for bloqueInfRes in bloquesInfoRestante:
         bloquesRestantes.append(bloqueInfRes)
-    # print('listadoBloques-----------__>>>>>>>>>>>>>>>>>',listadoBloques)
-    # print(bloquesRestantes)
 
     listaResultados = []
     listaFinal = list()
@@ -491,8 +402,6 @@ def InformacionConfResumida(id):
         tituloBloque = {}
 
     return docente, listaFinal
-
-
 
 
 '''GENERA PDF RESUMIDO'''
@@ -518,27 +427,29 @@ def PdfResumido(request, id):
 def DocResumido(request, id):
 
     docente, listaFinal = InformacionConfResumida(id)
-
     logo = str(settings.BASE_DIR) + '/cv_api/templates/logoutpl.png'
+    img_template = str(settings.BASE_DIR) + '/cv_api/templates/nieve.jpg'
     response = HttpResponse(content_type='application/msword')
-    response['Content-Disposition'] = 'attachment; filename="cv.docx"'
+    response['Content-Disposition'] = 'attachment; filename="cv_resumido.docx"'
 
     doc = DocxTemplate(str(settings.BASE_DIR) + '/cv_api/templates/docx_filename.docx')
-    imagen = docente['foto_web_low'] 
-    myimage = InlineImage(doc, image_descriptor=logo, width=Mm(15), height=Mm(20))
-    context = {'listaFinal': listaFinal, 'docente': docente, 'var': logo, 'myimage': myimage}
+    f = open(str(settings.BASE_DIR) + '/cv_api/templates/nieve.jpg','wb')
+    f.write(urllib.request.urlopen(docente['foto_web_low']).read()) 
+
+    myimage = InlineImage(doc, image_descriptor=logo, width=Mm(15), height=Mm(25))
+    docente_img = InlineImage(doc, img_template, width=Mm(60), height=Mm(60))
+    context = {'listaFinal': listaFinal, 'docente': docente, 'var': logo, 'myimage': myimage, 'imagen':docente_img}
+
     doc.render(context)
     doc.save(response) 
 
     return response
 
 
-
 '''GENERA JSON RESUMIDO'''
 def JsonResumido(request, id):
     
     docente, listaFinal = InformacionConfResumida(id)
-
     listaDocente = []
     del docente['related']
     listaDocente.append('Docente')
@@ -553,83 +464,60 @@ def JsonResumido(request, id):
     return response
 
 
-
-
-
-
-
-
 # -------------------------------------------------------GENERACION DE INFORMACION-CONFIGURACION PERSONALIZADA----------------------------------------------
 def InformacionConfPersonalizada(id, nombre_cv, cvHash):
     
     model_dict = models.ConfiguracionCv_Personalizado.objects.all().values().filter(id_user=id).filter(nombre_cv=nombre_cv).filter(cv=cvHash)
-    
+    model_bloques = models.Bloque.objects.all().values()
     dataPersonalizada = model_dict
-    print('DATAPERSONALIZADA--------------____>>>>>>>>>>>>>>>>>>>>>>>', dataPersonalizada)
-
 
     r = requests.get(f'https://sica.utpl.edu.ec/ws/api/docentes/{id}/',
                      headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'})
     docente = r.json()
 
-    '''Saca id Articulos '''
-    listaidArticulos = []
-    for infobloque in docente['related']['articulos']:
-        listaidArticulos.append(infobloque)
+    listaId = dict()
+    temp_data = []
+    bloquesLista = []
 
-    idsArticulos = [fila['id'] for fila in listaidArticulos]
+    for bloques_name in docente['related']:
+        bloquesLista.append(bloques_name)
 
-    '''Saca id Libros '''
-    listaidLibros = []
-    for infoLibros in docente['related']['libros']:
-        listaidLibros.append(infoLibros)
+    bloquesLista.sort()
 
-    idsLibros = [fila['id'] for fila in listaidLibros]
+    for bloque in bloquesLista:
+        lista_ids = [items['id'] for items in docente['related'][bloque]]
 
-    ''' Saca articulos de docentes por ID'''
-    listaArticulosDocente = []
-    for id in idsArticulos:
-        r = requests.get('https://sica.utpl.edu.ec/ws/api/articulos/' + str(id) + "/",
-                         headers={
-                             'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'}
-                         )
-        todos = r.json()
-        listaArticulosDocente.append(todos)
-    #   print('listaArticulosDocente------------>>>>>>>>>>>>>>>>>',listaArticulosDocente)
+        for id in lista_ids:
+            data_tt = requests.get('https://sica.utpl.edu.ec/ws/api/'+ str(bloque) + "/" + str(id) + "/",
+                       headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'}
+                     )
+            temp_data.append(data_tt.json())
 
-    ''' Saca libros de docentes por ID'''
-    listaLibrosDocente = []
-    for idLibro in idsLibros:
-        r = requests.get('https://sica.utpl.edu.ec/ws/api/libros/' + str(idLibro) + "/",
-                         headers={
-                             'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'}
-                         )
-        todos = r.json()
-        listaLibrosDocente.append(todos)
-        # print('listaArticulosDocente------------>>>>>>>>>>>>>>>>>',listaLibrosDocente)
+        listaId[bloque] = temp_data
+        temp_data = []
+
+
+    bloquesTodos = []
+    for bloque in model_bloques:
+      print("bloque", bloque['nombre'])
+      bloquesTodos.append(bloque['nombre'])
+
+    bloquesTodos.sort()
 
     '''Cambia valores None por cadena ('None') '''
-    for i in listaLibrosDocente:
-        for key, value in i.items():
+    for claveLista, valorLista in listaId.items():
+        for valor in valorLista:
+          print(valor)
+          for key, value in valor.items():
             if value is None:
                 value = 'None'
-            i[key] = value
-
-    proyectos = []
-    Capacitacion = []
-    GradoAcademico = []
+            valor[key] = value
 
     '''BLOQUES DE MODEL BLOQUES ORDENADOS '''
     ordenadosBloquesAPi = sorted(
         dataPersonalizada, key=lambda orden: orden['ordenPersonalizable'])
-    # print("ORDENADOSBLOQUESORIGINAL--------------->>>>>>>>>>>", ordenadosBloquesAPi)
-
     bloqueOrdenApi = [{b['nombreBloque']: b['visible_cv_bloque']}
                       for b in ordenadosBloquesAPi]
-
-    # print("ORDENADOSBLOQUESORIGINALORDENAPI------->>>>>>>>>>>", bloqueOrdenApi)
-    # ordenadosBloquesApi = sorted(bloqueOrdenApi, key=lambda orden: orden["ordenPersonalizable"])
-    # print("ORDENADOSBLOQUESAPI------->>>>>>>>>>>", ordenadosBloquesApi)
 
     seen = set()
     bloquesOrdenados = []
@@ -641,11 +529,9 @@ def InformacionConfPersonalizada(id, nombre_cv, cvHash):
 
 
     ordenadosBloques = [bloqueOrden for bloqueOrden in bloquesOrdenados if list(bloqueOrden.values()) != [False]]
-    # print("ordenadosBloques------->>>>>>>>>>>", ordenadosBloques)
 
     listaBloques = [[x for x, v in i.items()] for i in ordenadosBloques]
     listaBloquesOrdenados = [y for x in listaBloques for y in x]
-    # print("listaBloquesOrdenados------------_______>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>", listaBloquesOrdenados)
 
     '''SACA VISIBLES SI SON TRUE'''
     diccionario = dict()
@@ -656,7 +542,6 @@ def InformacionConfPersonalizada(id, nombre_cv, cvHash):
         listaatrvisibles = [[valor for clave, valor in i.items(
         ) if clave == 'nombre'] for i in ordenadosAtributos]
         listaVisiblesAtr = [y for x in listaatrvisibles for y in x]
-        # print('listaatrvisibles', listaVisiblesAtr, '\n')  
 
         diccionario[i] = listaVisiblesAtr
 
@@ -665,12 +550,14 @@ def InformacionConfPersonalizada(id, nombre_cv, cvHash):
     listaMapeados = dict()
     bloquesInformacion = dict()
 
-    '''Tendria que recuperar los bloques que estan como visibles'''
-    bloquesInformacion['Articulos'] = listaArticulosDocente
-    bloquesInformacion['Proyectos'] = proyectos
-    bloquesInformacion['Capacitacion'] = Capacitacion
-    bloquesInformacion['Libros'] = listaLibrosDocente
-    bloquesInformacion['GradoAcademico'] = GradoAcademico
+    cont = 0
+
+    for name_bloque, data_bloque in listaId.items():  
+    #   print(name_bloque)
+      bloquesInformacion[bloquesTodos[cont]] = data_bloque
+      cont+= 1
+    print("BLOQUEINFORMACION", bloquesInformacion)
+
 
     for i in listaBloquesOrdenados:
         mapeo = [{'mapeo': d['mapeo'], 'orden': d['orden']} for d in dataPersonalizada if d.get(
@@ -685,18 +572,15 @@ def InformacionConfPersonalizada(id, nombre_cv, cvHash):
         listaMapeados[i] = mapeados
         filtrados = [{atributo: d.get(atributo) for atributo in diccionario[i] if d.get(
             atributo) != None} for d in bloquesInformacion[i]]
-        # print('filtrados---___________>>>>>>>>>>>>>>>>>>>',i, filtrados)
         listadoBloques[i] = filtrados
 
     bloqueAtributos = dict()
     for listadoBloque in listadoBloques:
         bloqueAtributos[listadoBloque] = [{atributo: d.get(atributo) for atributo in diccionario[listadoBloque] if d.get(
             atributo) != None} for d in bloquesInformacion[listadoBloque]]
-    # print('filtrados->>>>>>>>>>>>>>>>>>>>>>>', bloqueAtributos)
 
     bloquesInfoRestante = {k: v for k, v in bloqueAtributos.items() if [
         item for item in v if item != {}]}
-    # print('bloquesInfoRestante', bloquesInfoRestante)
 
     i = []
     for i in listaBloquesOrdenados:
@@ -752,15 +636,20 @@ def PdfPersonalizado(request, id, nombre_cv, cvHash):
 def DocPersonalizado(request, id, nombre_cv, cvHash):
    
     docente, listaFinal = InformacionConfPersonalizada(id, nombre_cv, cvHash)
-
     logo = str(settings.BASE_DIR) + '/cv_api/templates/logoutpl.png'
+    img_template = str(settings.BASE_DIR) + '/cv_api/templates/nieve.jpg'
+
     response = HttpResponse(content_type='application/msword')
-    response['Content-Disposition'] = 'attachment; filename="cv.docx"'
+    response['Content-Disposition'] = 'attachment; filename="cv_personalizado.docx"'
 
     doc = DocxTemplate(str(settings.BASE_DIR) + '/cv_api/templates/docx_filename.docx')
-    imagen = docente['foto_web_low'] 
-    myimage = InlineImage(doc, image_descriptor=logo, width=Mm(15), height=Mm(20))
-    context = {'listaFinal': listaFinal, 'docente': docente, 'var': logo, 'myimage': myimage}
+    f = open(str(settings.BASE_DIR) + '/cv_api/templates/nieve.jpg','wb')
+    f.write(urllib.request.urlopen(docente['foto_web_low']).read()) 
+
+    myimage = InlineImage(doc, image_descriptor=logo, width=Mm(15), height=Mm(25))
+    docente_img = InlineImage(doc, img_template, width=Mm(60), height=Mm(60))
+    context = {'listaFinal': listaFinal, 'docente': docente, 'var': logo, 'myimage': myimage, 'imagen':docente_img}
+
     doc.render(context)
     doc.save(response) 
 
@@ -787,149 +676,8 @@ def JsonPersonalizado(request, id, nombre_cv, cvHash):
     return response
 
 
-
 # -------------------------------------------------------GENERACION DE TXT----------------------------------------------
-
-def GeneraTxtInformacion(request, id):
-    r = requests.get(f'https://sica.utpl.edu.ec/ws/api/docentes/{id}/',
-                     headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'})
-    docente = r.json()
-
-    print("DOCENTEBIBTEX", docente['primer_apellido'])
-
-    
-    '''Saca id Articulos '''
-    listaidArticulos = []
-    for infobloque in docente['related']['articulos']:
-        listaidArticulos.append(infobloque)
-
-    idsArticulos = [fila['id'] for fila in listaidArticulos]
-
-    '''Saca id Libros '''
-    listaidLibros = []
-    for infoLibros in docente['related']['libros']:
-        listaidLibros.append(infoLibros)
-
-    idsLibros = [fila['id'] for fila in listaidLibros]
-
-    ''' Saca articulos de docentes por ID'''
-    listaArticulosDocente = []
-    for id in idsArticulos:
-        r = requests.get('https://sica.utpl.edu.ec/ws/api/articulos/' + str(id) + "/",
-                         headers={
-                             'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'}
-                         )
-        todos = r.json()
-        listaArticulosDocente.append(todos)
-
-    ''' Saca libros de docentes por ID'''
-    listaLibrosDocente = []
-    for idLibro in idsLibros:
-        r = requests.get('https://sica.utpl.edu.ec/ws/api/libros/' + str(idLibro) + "/",
-                         headers={
-                             'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'}
-                         )
-        todos = r.json()
-        listaLibrosDocente.append(todos)
-
-    '''Cambia valores None por cadena ('None') '''
-    for i in listaLibrosDocente:
-        for key, value in i.items():
-            if value is None:
-                value = 'None'
-            i[key] = value
-
-    # proyectos = []
-    # Capacitacion = []
-    GradoAcademico = []
-
-    proyectos = []
-
-    Capacitacion = []
-
-    response = BibDatabase()
-    # print(response.entries)
-
-
-    lines = []
-
-    for libro in listaLibrosDocente:
-        fecha = datetime.now()
-        titulo = libro['titulo']
-        revista = libro['editorial']
-        link_libro = libro['link_descarga_1']
-        isbn = libro['isbn']
-        tipo_documento = libro['tipo_libro']
-        ambito_editorial = libro['ambito_editorial']
-        lines.append(f'LIBROS\nSIAC UTPL\nEXPORT DATE:{fecha}\n{titulo}\n{revista}\n{link_libro}\nISBN:{isbn}\nDOCUMENT TYPE:{tipo_documento}\nEDITORIAL SCOPE:{ambito_editorial}\nSOURCE:SIAC UTPL\n\n\n\n\n\n')
-
-
-    
-    for articulo in listaArticulosDocente:
-        try:
-            fecha = datetime.now()
-            titulo = articulo['titulo']
-            revista = articulo['revista']
-            link_articulo = articulo['link_articulo']
-            doi = articulo['doi']
-            tipo_documento = articulo['tipo_documento']
-            publication_stage = articulo['estado']
-            lines.append(f'ARTICULOS\nSIAC UTPL\nEXPORT DATE:{fecha}\n{titulo}\n{revista}\n{link_articulo}\nDOI:{doi}\nDOCUMENT TYPE:{tipo_documento}\nPUBLICATION STAGE:{publication_stage}\nSOURCE:SIAC UTPL\n\n\n\n\n\n')
-        except:
-            print("asdsadsa")
-        
-    
-   
-
-    # lines = []
-    for pryecto in proyectos:
-        fecha = datetime.now()
-        nombre_proyecto = pryecto['nombre_proyecto']
-        fecha_inicio = pryecto['fecha_inicio']
-        fecha_cierre = pryecto['fecha_cierre']
-        tipo_proyecto = pryecto['tipo_proyecto']
-        # tipo_documento = libro['tipo_libro']
-        # ambito_editorial = libro['ambito_editorial']
-        lines.append(f'PROYECTOS]\nSIAC UTPL\nEXPORT DATE:{fecha}\n{nombre_proyecto}\n{fecha_inicio}\n{fecha_cierre}\nTIPO PROYECTO:{tipo_proyecto}\nSOURCE:SIAC UTPL\n\n\n\n\n\n')
-
-
-
-    for capacitacion in Capacitacion:
-        fecha = datetime.now()
-        nombre = capacitacion['nombre_proyecto']
-        fecha_inicio = capacitacion['fecha_inicio']
-        # fecha_fin = capacitacion['fecha_cierre']
-        institucion_organizadora = capacitacion['institucion_organizadora']
-        # tipo_documento = libro['tipo_libro']
-        # ambito_editorial = libro['ambito_editorial']
-        lines.append(f'CAPACITACIÓN\nSIAC UTPL\nEXPORT DATE:{fecha}\n{nombre}\n{fecha_inicio}\n{fecha_inicio}\nINSTITUCIÓN:{institucion_organizadora}\nSOURCE:SIAC UTPL\n\n\n\n\n\n')
-
-    for gradoAcademico in GradoAcademico:
-        fecha = datetime.now()
-        nombre = gradoAcademico['denominacion_titulo']
-        fecha_inicio = gradoAcademico['fecha_inicio']
-        # fecha_fin = capacitacion['fecha_cierre']
-        institucion_organizadora = gradoAcademico['universidad_emisora']
-        # tipo_documento = libro['tipo_libro']
-        # ambito_editorial = libro['ambito_editorial']
-        lines.append(f'SIAC UTPL\nEXPORT DATE:{fecha}\n{nombre}\n{fecha_inicio}\n{fecha_inicio}\nINSTITUCIÓN:{institucion_organizadora}\nSOURCE:SIAC UTPL\n\n\n\n\n\n')
-
-
-    print(lines)
-    # response.entries = lines
-    # writer = BibTexWriter()
-    # data = writer.write(response)
-    response = HttpResponse(content_type='text/plain')
-    response['Content-Disposition'] = 'attachment; filename=export.txt'
-   
-    response.writelines(lines)
-
-    return response
-
-
-
-
-'''GENERA PDF RESUMIDO'''
+'''GENERA TXT'''
 def InformacionTxtArticulos(request, id):
 
     r = requests.get(f'https://sica.utpl.edu.ec/ws/api/docentes/{id}/',
@@ -942,7 +690,6 @@ def InformacionTxtArticulos(request, id):
         listaidArticulos.append(infobloque)
 
     idsArticulos = [fila['id'] for fila in listaidArticulos]
-
 
     ''' Saca articulos de docentes por ID'''
     listaArticulosDocente = []
@@ -961,8 +708,6 @@ def InformacionTxtArticulos(request, id):
                 value = 'None'
             i[key] = value
 
-    print("Articulos----->>>>>>>>>>>>>>>>>>>>>",listaArticulosDocente)
-
     lines = []
     for articulo in listaArticulosDocente:
         try:
@@ -979,7 +724,6 @@ def InformacionTxtArticulos(request, id):
 
     response = HttpResponse(content_type='text/plain')
     response['Content-Disposition'] = 'attachment; filename=export.txt'
-   
     response.writelines(lines)
 
     return response
@@ -998,8 +742,7 @@ def InformacionTxtLibros(request, id):
 
     idsLibros = [fila['id'] for fila in listaidLibros]
 
-
-    ''' Saca articulos de docentes por ID'''
+    ''' Saca libros de docentes por ID'''
     listaLibrosDocente = []
     for id in idsLibros:
         r = requests.get('https://sica.utpl.edu.ec/ws/api/libros/' + str(id) + "/",
@@ -1016,12 +759,7 @@ def InformacionTxtLibros(request, id):
                 value = 'None'
             i[key] = value
 
-
     lines = []
-    arreglo = [{libro['titulo'], libro['editorial']} for libro in listaLibrosDocente]
-    print("ARREGLO----------_______>>>>>>>>>>>>>.", arreglo)
-    
-
     for libro in listaLibrosDocente:
         fecha = datetime.now()
         titulo = libro['titulo']
@@ -1032,11 +770,8 @@ def InformacionTxtLibros(request, id):
         ambito_editorial = libro['ambito_editorial']
         lines.append(f'SIAC UTPL\nEXPORT DATE:{fecha}\n{titulo}\n{revista}\n{link_libro}\nISBN:{isbn}\nDOCUMENT TYPE:{tipo_documento}\nEDITORIAL SCOPE:{ambito_editorial}\nSOURCE:SIAC UTPL\n\n\n\n\n\n')
 
-
-
     response = HttpResponse(content_type='text/plain')
     response['Content-Disposition'] = 'attachment; filename=export.txt'
-   
     response.writelines(lines)
 
     return response
@@ -1055,7 +790,6 @@ def InformacionTxtProyectos(request, id):
         listaidLibros.append(infobloque)
 
     idsLibros = [fila['id'] for fila in listaidLibros]
-
 
     ''' Saca articulos de docentes por ID'''
     listaLibrosDocente = []
@@ -1076,10 +810,6 @@ def InformacionTxtProyectos(request, id):
 
 
     lines = []
-    # arreglo = [{libro['titulo'], libro['editorial']} for libro in listaLibrosDocente]
-    # print("ARREGLO----------_______>>>>>>>>>>>>>.", arreglo)
-    
-
     for pryecto in listaLibrosDocente:
         fecha = datetime.now()
         nombre_proyecto = pryecto['nombre_proyecto']
@@ -1090,10 +820,8 @@ def InformacionTxtProyectos(request, id):
         # ambito_editorial = libro['ambito_editorial']
         lines.append(f'SIAC UTPL\nEXPORT DATE:{fecha}\n{nombre_proyecto}\n{fecha_inicio}\n{fecha_cierre}\nTIPO PROYECTO:{tipo_proyecto}\nSOURCE:SIAC UTPL\n\n\n\n\n\n')
 
-
     response = HttpResponse(content_type='text/plain')
     response['Content-Disposition'] = 'attachment; filename=export.txt'
-   
     response.writelines(lines)
 
     return response
@@ -1112,31 +840,25 @@ def InformacionTxtCapacitacion(request, id):
 
     idsLibros = [fila['id'] for fila in listaidLibros]
 
-
     ''' Saca articulos de docentes por ID'''
-    listaLibrosDocente = []
+    listaCapacitacionDocente = []
     for id in idsLibros:
         r = requests.get('https://sica.utpl.edu.ec/ws/api/capacitacion/' + str(id) + "/",
                          headers={
                              'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'}
                          )
         todos = r.json()
-        listaLibrosDocente.append(todos)
+        listaCapacitacionDocente.append(todos)
 
     '''Cambia valores None por cadena ('None') '''
-    for i in listaLibrosDocente:
+    for i in listaCapacitacionDocente:
         for key, value in i.items():
             if value is None:
                 value = 'None'
             i[key] = value
 
-
     lines = []
-    # arreglo = [{libro['titulo'], libro['editorial']} for libro in listaLibrosDocente]
-    # print("ARREGLO----------_______>>>>>>>>>>>>>.", arreglo)
-    
-
-    for capacitacion in listaLibrosDocente:
+    for capacitacion in listaCapacitacionDocente:
         fecha = datetime.now()
         nombre = capacitacion['nombre_proyecto']
         fecha_inicio = capacitacion['fecha_inicio']
@@ -1146,10 +868,8 @@ def InformacionTxtCapacitacion(request, id):
         # ambito_editorial = libro['ambito_editorial']
         lines.append(f'SIAC UTPL\nEXPORT DATE:{fecha}\n{nombre}\n{fecha_inicio}\n{fecha_inicio}\nINSTITUCIÓN:{institucion_organizadora}\nSOURCE:SIAC UTPL\n\n\n\n\n\n')
 
-
     response = HttpResponse(content_type='text/plain')
     response['Content-Disposition'] = 'attachment; filename=export.txt'
-   
     response.writelines(lines)
 
     return response
@@ -1168,7 +888,6 @@ def InformacionTxtGradoAcademico(request, id):
 
     idsLibros = [fila['id'] for fila in listaidLibros]
 
-
     ''' Saca articulos de docentes por ID'''
     listaLibrosDocente = []
     for id in idsLibros:
@@ -1186,33 +905,25 @@ def InformacionTxtGradoAcademico(request, id):
                 value = 'None'
             i[key] = value
 
-
     lines = []
-    # arreglo = [{libro['titulo'], libro['editorial']} for libro in listaLibrosDocente]
-    # print("ARREGLO----------_______>>>>>>>>>>>>>.", arreglo)
-    
-
     for gradoAcademico in listaLibrosDocente:
         fecha = datetime.now()
         nombre = gradoAcademico['denominacion_titulo']
         fecha_inicio = gradoAcademico['fecha_inicio']
-        # fecha_fin = capacitacion['fecha_cierre']
+        fecha_fin = gradoAcademico['fecha_fin']
         institucion_organizadora = gradoAcademico['universidad_emisora']
-        # tipo_documento = libro['tipo_libro']
+        tipo_documento = gradoAcademico['tipo_titulo']
         # ambito_editorial = libro['ambito_editorial']
-        lines.append(f'SIAC UTPL\nEXPORT DATE:{fecha}\n{nombre}\n{fecha_inicio}\n{fecha_inicio}\nINSTITUCIÓN:{institucion_organizadora}\nSOURCE:SIAC UTPL\n\n\n\n\n\n')
-
+        lines.append(f'SIAC UTPL\nEXPORT DATE:{fecha}\n{nombre}\n{fecha_inicio}\n{fecha_fin}\nINSTITUCIÓN:{institucion_organizadora}\nTIPO DOCUMENTO:{tipo_documento}\nSOURCE:SIAC UTPL\n\n\n\n\n\n')
 
     response = HttpResponse(content_type='text/plain')
     response['Content-Disposition'] = 'attachment; filename=export.txt'
-   
     response.writelines(lines)
 
     return response
 
 
-
-
+# -------------------------------------------------------GENERACION DE CSV----------------------------------------------
 def informacionCsvArticulos(request, id):
     r = requests.get(f'https://sica.utpl.edu.ec/ws/api/docentes/{id}/',
                      headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'})
@@ -1235,28 +946,12 @@ def informacionCsvArticulos(request, id):
         todos = r.json()
         listaArticulosDocente.append(todos)
 
-    print("-------__>>>>>>>>>>>>", listaArticulosDocente)
-
     response = HttpResponse(content_type='text/csv')  
     response['Content-Disposition'] = 'attachment; filename="file.csv"'  
     writer = csv.writer(response)  
     
-    # titulos = []
-    # for lista in listaArticulosDocente:
-    #     for k, v in lista.items():
-    #         titulos.append(k)
-
-        # writer.writerow(f'{k}' for k, v in lista.items()) 
-
-    # convert_list_to_set =  list(OrderedDict.fromkeys(titulos))
-    
-    # writer.writerow(f'{i}' for i in convert_list_to_set)
-
-
-
     lines = []
     for lista in listaArticulosDocente:
-        # print("LISTAID---------___>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>.", lista['id'])
         try:
             const = {
               'Title ': lista['titulo'],
@@ -1281,7 +976,6 @@ def informacionCsvArticulos(request, id):
         writer.writerow(v for k, v in val.items())
 
     return response  
-
 
 
 
@@ -1315,10 +1009,8 @@ def informacionCsvLibros(request, id):
     response['Content-Disposition'] = 'attachment; filename="file.csv"'  
     writer = csv.writer(response)  
 
-
     lines = []
     for libro in listaLibrosDocente:
-        # print("LISTAID---------___>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>.", lista['id'])
         try:
             const = {
               'Title ': libro['titulo'],
@@ -1342,8 +1034,6 @@ def informacionCsvLibros(request, id):
 
     return response  
     
-
-
 
 '''CSV CAPACITACION'''
 def informacionCsvProyectos(request, id):
@@ -1378,14 +1068,11 @@ def informacionCsvProyectos(request, id):
 
     lines = []
     for proyecto in listaProyectosDocente:
-        # print("LISTAID---------___>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>.", lista['id'])
         try:
             const = {
               'Title ': proyecto['nombre_proyecto'],
               'year' : str(proyecto['fecha_cierre']),
-            #   'tematica' : proyecto['tematica'],
               'programa': proyecto["programa"],
-            #   'link': proyecto['link'],
               'tipo_proyecto': proyecto['tipo_proyecto'],
               'estado': proyecto['estado'],
               'source': "siac utpl"
@@ -1401,9 +1088,6 @@ def informacionCsvProyectos(request, id):
         writer.writerow(v for k, v in val.items())
 
     return response  
-
-
-
 
 
 '''CSV CAPACITACION'''
@@ -1439,7 +1123,6 @@ def informacionCsvCapacitacion(request, id):
 
     lines = []
     for capacitacion in listaCapacitacionesDocente:
-        # print("LISTAID---------___>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>.", lista['id'])
         try:
             const = {
               'Title ': capacitacion['nombre'],
@@ -1497,7 +1180,6 @@ def informacionCsvGradoAcademico(request, id):
 
     lines = []
     for gradoAcademico in listaCapacitacionesDocente:
-        # print("LISTAID---------___>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>.", lista['id'])
         try:
             const = {
               'Title ': gradoAcademico['denominacion_titulo'],
@@ -1521,169 +1203,11 @@ def informacionCsvGradoAcademico(request, id):
     return response  
 
 
-
-
-''''GENERA CSV COMPLETO'''
-def InformacionCsv(request, id):
-    # Create the HttpResponse object with the appropriate CSV header.
-    model_dict = models.ConfiguracionCv.objects.all().values()
-    model_bloques = models.Bloque.objects.all().values()
-
-    r = requests.get(f'https://sica.utpl.edu.ec/ws/api/docentes/{id}/',
-                     headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'})
-    docente = r.json()
-
-    '''Saca id Articulos '''
-    listaidArticulos = []
-    for infobloque in docente['related']['articulos']:
-        listaidArticulos.append(infobloque)
-
-    idsArticulos = [fila['id'] for fila in listaidArticulos]
-
-    '''Saca id Libros '''
-    listaidLibros = []
-    for infoLibros in docente['related']['libros']:
-        listaidLibros.append(infoLibros)
-
-    idsLibros = [fila['id'] for fila in listaidLibros]
-
-    ''' Saca articulos de docentes por ID'''
-    listaArticulosDocente = []
-    for id in idsArticulos:
-        r = requests.get('https://sica.utpl.edu.ec/ws/api/articulos/' + str(id) + "/",
-                         headers={
-                             'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'}
-                         )
-        todos = r.json()
-        listaArticulosDocente.append(todos)
-    #   print('listaArticulosDocente------------>>>>>>>>>>>>>>>>>',listaArticulosDocente)
-
-    ''' Saca libros de docentes por ID'''
-    listaLibrosDocente = []
-    for idLibro in idsLibros:
-        r = requests.get('https://sica.utpl.edu.ec/ws/api/libros/' + str(idLibro) + "/",
-                         headers={
-                             'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'}
-                         )
-        todos = r.json()
-        listaLibrosDocente.append(todos)
-        print('listaArticulosDocente------------>>>>>>>>>>>>>>>>>',listaLibrosDocente)
-
-    '''Cambia valores None por cadena ('None') '''
-    for i in listaLibrosDocente:
-        for key, value in i.items():
-            if value is None:
-                value = 'None'
-            i[key] = value
-
-    proyectos = []
-    Capacitacion = []
-    GradoAcademico = []
-
-    '''BLOQUES DE MODEL BLOQUES ORDENADOS '''
-    ordenadosBloques = sorted(
-        model_bloques, key=lambda orden: orden['ordenCompleto'])
-    bloqueOrdenApi = [{b['nombre']: b['ordenCompleto']}
-                      for b in ordenadosBloques]
-
-    bloqueOrdenApi = [bloqueOrden for bloqueOrden in bloqueOrdenApi if list(bloqueOrden.values()) != [0]]
-
-
-    listaBloques = [[x for x, v in i.items()] for i in bloqueOrdenApi]
-    listaBloquesOrdenados = [y for x in listaBloques for y in x]
-
-    '''SACA VISIBLES SI SON TRUE'''
-    diccionario = dict()
-    for i in listaBloquesOrdenados:
-        visibles = [{'nombre': d['atributo'], 'ordenCompleto': d['ordenCompleto']}
-                    for d in model_dict if d.get("visible_cv_completo") and d.get('bloque') == i]
-        ordenadosAtributos = sorted(visibles, key=lambda orden: orden['ordenCompleto'])
-        listaatrvisibles = [[valor for clave, valor in i.items(
-        ) if clave == 'nombre'] for i in ordenadosAtributos]
-        listaVisiblesAtr = [y for x in listaatrvisibles for y in x]
-        diccionario[i] = listaVisiblesAtr
-
-    '''SACA MAPEO SI ATRIBUTO ES TRUE'''
-    listadoBloques = dict()
-    listaMapeados = dict()
-    bloquesInformacion = dict()
-
-    '''Tendria que recuperar los bloques que estan como visibles'''
-    bloquesInformacion['Articulos'] = listaArticulosDocente
-    bloquesInformacion['Proyectos'] = proyectos
-    bloquesInformacion['Capacitacion'] = Capacitacion
-    bloquesInformacion['Libros'] = listaLibrosDocente
-    bloquesInformacion['GradoAcademico'] = GradoAcademico
-
-    for i in listaBloquesOrdenados:
-        mapeo = [{'mapeo': d['mapeo'], 'ordenCompleto': d['ordenCompleto']} for d in model_dict if d.get(
-            "visible_cv_completo") and d.get('bloque') == i]
-        ordenadosMapeo = sorted(mapeo, key=lambda orden: orden['ordenCompleto'])
-
-        listamapeoisibles = [[valor for clave, valor in i.items(
-        ) if clave == 'mapeo'] for i in ordenadosMapeo]
-        listaVisiblesmapeo = [y for x in listamapeoisibles for y in x]
-
-        mapeados = pd.unique(listaVisiblesmapeo)
-        listaMapeados[i] = mapeados
-        filtrados = [{atributo: d.get(atributo) for atributo in diccionario[i] if d.get(
-            atributo) != None} for d in bloquesInformacion[i]]
-        listadoBloques[i] = filtrados
-
-    bloqueAtributos = dict()
-    for listadoBloque in listadoBloques:
-        bloqueAtributos[listadoBloque] = [{atributo: d.get(atributo) for atributo in diccionario[listadoBloque] if d.get(
-            atributo) != None} for d in bloquesInformacion[listadoBloque]]
-
-    i = []
-    for i in listaBloquesOrdenados:
-        for filtrado in bloqueAtributos[i]:
-            filtrado["mapeo"] = [fil for fil in listaMapeados[i]]
-
-    bloquesInfoRestante = {k: v for k, v in bloqueAtributos.items() if v != []}
-
-    bloquesRestantes = []
-
-    for bloqueInfRes in bloquesInfoRestante:
-        bloquesRestantes.append(bloqueInfRes)
-   
-    listaResultados = []
-    listaFinal = list()
-    tituloBloque = dict()
-    
-    for i in bloquesRestantes:
-        tituloBloque[''] = i.upper()
-        listaResultados.append(tituloBloque)
-        for bloqueInformacion in bloquesInfoRestante[i]:
-            resultados = dict(
-                zip(bloqueInformacion['mapeo'], bloqueInformacion.values()))
-            listaResultados.append(resultados)
-
-        listaFinal.append(listaResultados)
-        listaResultados = []
-        tituloBloque = {}
-
-    response = HttpResponse(content_type='text/csv')  
-    response['Content-Disposition'] = 'attachment; filename="file.csv"'  
-    writer = csv.writer(response)  
-    
-    for lista in listaFinal:
-        # print(lista)
-        for i in lista:
-            writer.writerow(f'{k}' for k, v in i.items()) 
-            writer.writerow(v for k, v in i.items())
-
-
-    return response  
-
-
+# -------------------------------------------------------GENERACION DE BIBTEX----------------------------------------------
 def InformacionBibTexArticulos(request, id):
     r = requests.get(f'https://sica.utpl.edu.ec/ws/api/docentes/{id}/',
                      headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'})
     docente = r.json()
-
-    print("DOCENTEBIBTEX", docente['primer_apellido'])
-
     
     '''Saca id Articulos '''
     listaidArticulos = []
@@ -1704,13 +1228,10 @@ def InformacionBibTexArticulos(request, id):
 
 
     lines = []
-
     for articulo in listaArticulosDocente:
-        # print('REVIST-_____>>>>>>>>>>>>>>>>>>>>>', articulo['volume'])
         try:
             const = {
               'journal ': articulo['revista'],
-            #   'comments' : articulo['abstract'],
               'abstract' : articulo['abstract'],
               'title   ' : articulo['titulo'],
               'year    ' : str(articulo['year']),
@@ -1728,17 +1249,11 @@ def InformacionBibTexArticulos(request, id):
     response.entries = lines
     writer = BibTexWriter()
     data = writer.write(response)
-
-    # with open('bibtex.bib', 'w') as bibfile:
-    #     bibfile.write(writer.write(db))
-    print("BIBFILE-------__>>>>>>>>", writer.write(response))
     
     response = HttpResponse(data, content_type='text/x-bibtex')  
     response['Content-Disposition'] = 'attachment; filename="file.bib"' 
 
     return response
-
-
 
 
 def InformacionBibTexLibros(request, id):
@@ -1748,7 +1263,6 @@ def InformacionBibTexLibros(request, id):
 
     print("DOCENTEBIBTEX", docente['primer_apellido'])
 
-    
     '''Saca id Libros '''
     listaidLibros = []
     for infoLibros in docente['related']['libros']:
@@ -1766,9 +1280,7 @@ def InformacionBibTexLibros(request, id):
        todos = r.json()
        listaLibrosDocente.append(todos)
 
-
     lines = []
-
     for libro in listaLibrosDocente:
         const = {
           'editorial ': libro['editorial'],
@@ -1777,20 +1289,15 @@ def InformacionBibTexLibros(request, id):
           'title   ' : libro['titulo'],
           'year    ' : str(libro['anio']),
           'volume  ' : '1',
-          'ID' : "Marco Vinicio",
+          'ID' : docente['primer_apellido'] + str(libro['anio']),
           'ENTRYTYPE': 'book'
         }
         lines.append(const)
 
-    print(lines)
     response = BibDatabase()
     response.entries = lines
     writer = BibTexWriter()
     data = writer.write(response)
-
-    # with open('bibtex.bib', 'w') as bibfile:
-    #     bibfile.write(writer.write(db))
-    print("BIBFILE-------__>>>>>>>>", writer.write(response))
     
     response = HttpResponse(data, content_type='text/x-bibtex')  
     response['Content-Disposition'] = 'attachment; filename="file.bib"' 
@@ -1804,9 +1311,6 @@ def InformacionBibTexProyectos(request, id):
     r = requests.get(f'https://sica.utpl.edu.ec/ws/api/docentes/{id}/',
                      headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'})
     docente = r.json()
-
-    print("DOCENTEBIBTEX", docente['primer_apellido'])
-
     
     '''Saca id Libros '''
     listaidLibros = []
@@ -1825,9 +1329,7 @@ def InformacionBibTexProyectos(request, id):
        todos = r.json()
        listaProyectosDocente.append(todos)
 
-
     lines = []
-
     for proyecto in listaProyectosDocente:
         try:
             const = {
@@ -1837,23 +1339,17 @@ def InformacionBibTexProyectos(request, id):
               'title   ' : proyecto['nombre_proyecto'],
               'year    ' : str(proyecto['fecha_cierre']),
               'volume  ' : '1',
-              'ID' : docente['primer_apellido'],
+              'ID' : docente['primer_apellido'] + str(proyecto['fecha_cierre']),
               'ENTRYTYPE': 'proyect'
             }
             lines.append(const)
         except:
             print("asdassa")
 
-    print(lines)
     response = BibDatabase()
     response.entries = lines
     writer = BibTexWriter()
-    data = writer.write(response)
-
-    # with open('bibtex.bib', 'w') as bibfile:
-    #     bibfile.write(writer.write(db))
-    print("BIBFILE-------__>>>>>>>>", writer.write(response))
-    
+    data = writer.write(response)    
     response = HttpResponse(data, content_type='text/x-bibtex')  
     response['Content-Disposition'] = 'attachment; filename="file.bib"' 
 
@@ -1865,9 +1361,6 @@ def InformacionBibTexCapacitaciones(request, id):
                      headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'})
     docente = r.json()
 
-    print("DOCENTEBIBTEX", docente['primer_apellido'])
-
-    
     '''Saca id Libros '''
     listaidLibros = []
     for infoLibros in docente['related']['capacitacion']:
@@ -1887,7 +1380,6 @@ def InformacionBibTexCapacitaciones(request, id):
 
 
     lines = []
-
     for capacitacion in listaCapacitacionesDocente:
         print("CAPACITACION", capacitacion)
         const = {
@@ -1897,36 +1389,25 @@ def InformacionBibTexCapacitaciones(request, id):
             'title   ' : capacitacion['nombre'],
             'date    ' : capacitacion['fecha_fin'],
             'volume  ' : '1',
-            'ID' : "Marco Vinicio",
+            'ID' : docente['primer_apellido'] + capacitacion['fecha_fin'],
             'ENTRYTYPE': 'capacitation'
         }
         lines.append(const)
 
-    print(lines)
     response = BibDatabase()
     response.entries = lines
     writer = BibTexWriter()
     data = writer.write(response)
-
-    # with open('bibtex.bib', 'w') as bibfile:
-    #     bibfile.write(writer.write(db))
-    print("BIBFILE-------__>>>>>>>>", writer.write(response))
-    
     response = HttpResponse(data, content_type='text/x-bibtex')  
     response['Content-Disposition'] = 'attachment; filename="file.bib"' 
 
     return response
 
 
-
-
 def InformacionBibTexGradoAcademico(request, id):
     r = requests.get(f'https://sica.utpl.edu.ec/ws/api/docentes/{id}/',
                      headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'})
     docente = r.json()
-
-    print("DOCENTEBIBTEX", docente['primer_apellido'])
-
     
     '''Saca id Libros '''
     listaidLibros = []
@@ -1945,7 +1426,6 @@ def InformacionBibTexGradoAcademico(request, id):
        todos = r.json()
        listaGradoAcademicoDocente.append(todos)
 
-
     lines = []
 
     for gradoAcademico in listaGradoAcademicoDocente:
@@ -1957,195 +1437,39 @@ def InformacionBibTexGradoAcademico(request, id):
             'denominacion_titulo   ' : gradoAcademico['denominacion_titulo'],
             'date    ' : gradoAcademico['fecha_emision'],
             'volume  ' : '1',
-            'ID' : "Marco Vinicio",
+            'ID' : docente['primer_apellido'] + gradoAcademico['fecha_emision'],
             'ENTRYTYPE': 'capacitation'
         }
         lines.append(const)
 
-    print(lines)
     response = BibDatabase()
     response.entries = lines
     writer = BibTexWriter()
-    data = writer.write(response)
-
-    # with open('bibtex.bib', 'w') as bibfile:
-    #     bibfile.write(writer.write(db))
-    print("BIBFILE-------__>>>>>>>>", writer.write(response))
-    
+    data = writer.write(response)    
     response = HttpResponse(data, content_type='text/x-bibtex')  
     response['Content-Disposition'] = 'attachment; filename="file.bib"' 
 
     return response
-
-
-
-def generaBibTex(request, id):
-
-    r = requests.get(f'https://sica.utpl.edu.ec/ws/api/docentes/{id}/',
-                     headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'})
-    docente = r.json()
-
-    print("DOCENTEBIBTEX", docente['primer_apellido'])
-
-    
-    '''Saca id Articulos '''
-    listaidArticulos = []
-    for infobloque in docente['related']['articulos']:
-        listaidArticulos.append(infobloque)
-
-    idsArticulos = [fila['id'] for fila in listaidArticulos]
-
-    '''Saca id Libros '''
-    listaidLibros = []
-    for infoLibros in docente['related']['libros']:
-        listaidLibros.append(infoLibros)
-
-    idsLibros = [fila['id'] for fila in listaidLibros]
-
-    ''' Saca articulos de docentes por ID'''
-    listaArticulosDocente = []
-    for id in idsArticulos:
-        r = requests.get('https://sica.utpl.edu.ec/ws/api/articulos/' + str(id) + "/",
-                         headers={
-                             'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'}
-                         )
-        todos = r.json()
-        listaArticulosDocente.append(todos)
-
-    ''' Saca libros de docentes por ID'''
-    listaLibrosDocente = []
-    for idLibro in idsLibros:
-        r = requests.get('https://sica.utpl.edu.ec/ws/api/libros/' + str(idLibro) + "/",
-                         headers={
-                             'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'}
-                         )
-        todos = r.json()
-        listaLibrosDocente.append(todos)
-
-    '''Cambia valores None por cadena ('None') '''
-    for i in listaLibrosDocente:
-        for key, value in i.items():
-            if value is None:
-                value = 'None'
-            i[key] = value
-
-    # proyectos = []
-    # Capacitacion = []
-    GradoAcademico = []
-
-    proyectos = []
-
-    Capacitacion = []
-
-    response = BibDatabase()
-    # print(response.entries)
-
-
-    lines = []
-
-    for libro in listaLibrosDocente:
-        const = {
-          'editorial ': libro['editorial'],
-          'comments' : "asdsa",
-          'abstract' : 'description test',
-          'title   ' : libro['titulo'],
-          'year    ' : str(libro['anio']),
-          'volume  ' : '1',
-          'ID' : "Marco Vinicio",
-          'ENTRYTYPE': 'book'
-        }
-        lines.append(const)
-
-    
-    for articulo in listaArticulosDocente:
-        # print('REVIST-_____>>>>>>>>>>>>>>>>>>>>>', articulo['volume'])
-        try:
-            const = {
-              'journal ': articulo['revista'],
-            #   'comments' : articulo['abstract'],
-              'abstract' : articulo['abstract'],
-              'title   ' : articulo['titulo'],
-              'year    ' : str(articulo['year']),
-              'volume  ' : str(articulo['volume']),
-              'ID' : docente['primer_apellido'] + str(articulo['year']),
-              'keywords': articulo["keywords"],
-              'ENTRYTYPE': 'article'
-            }
-            lines.append(const)
-        except:
-            print("asdassa")
-        
-    
-   
-
-    # lines = []
-    for proyecto in proyectos:
-      const = {
-          'journal ': proyecto['descripcion'],
-          'comments' : proyecto['descripcion'],
-          'abstract' : proyecto['descripcion'],
-          'title   ' : proyecto['nombre_proyecto'],
-          'year    ' : str(proyecto['fecha_cierre']),
-          'volume  ' : '1',
-          'ID' : docente['primer_apellido'],
-          'ENTRYTYPE': 'proyect'
-      }
-      lines.append(const)
-
-    for capacitacion in Capacitacion:
-      print("CAPACITACION", capacitacion)
-      const = {
-          'journal ': capacitacion['tematica'],
-          'comments' : capacitacion['comite_organizador'],
-          'abstract' : capacitacion['comite_organizador'],
-          'title   ' : capacitacion['nombre'],
-          'date    ' : capacitacion['fecha_fin'],
-          'volume  ' : '1',
-          'ID' : "Marco Vinicio",
-          'ENTRYTYPE': 'capacitation'
-      }
-      lines.append(const)
-
-    print(lines)
-    response.entries = lines
-    writer = BibTexWriter()
-    data = writer.write(response)
-
-    # with open('bibtex.bib', 'w') as bibfile:
-    #     bibfile.write(writer.write(db))
-    print("BIBFILE-------__>>>>>>>>", writer.write(response))
-    
-    response = HttpResponse(data, content_type='text/x-bibtex')  
-    response['Content-Disposition'] = 'attachment; filename="file.bib"' 
-
-    return response
-
 
 
 def eliminaPersonalizados(request, nombre_cv, cv ):
     model_dict = models.ConfiguracionCv_Personalizado.objects.filter(nombre_cv = nombre_cv).filter(cv=cv)
-
-    print(model_dict)
     model_dict.delete()
-    print(nombre_cv, cv)
-
-    print("BOORADO", model_dict)
-
     return redirect('/api')
 
 
-from django.http import JsonResponse
+# from django.http import JsonResponse
 
-# Filtrada por usuario, Bloque, nombrecv y cvHash
-def getConfPersonalizada(request, id_user, bloque, nombre_cv, cv):
-    model_dict = models.ConfiguracionCv_Personalizado.objects.filter(id_user = id_user).filter(nombre_cv=nombre_cv).values()
-    # .filter(cv=cv).filter(bloque=bloque)
-    # json_stuff = simplejson.dumps(model_dict)
-    # data = model_dict.json()
-    # data = serializers.serialize('json', model_dict)
+# # Filtrada por usuario, Bloque, nombrecv y cvHash
+# def getConfPersonalizada(request, id_user, bloque, nombre_cv, cv):
+#     model_dict = models.ConfiguracionCv_Personalizado.objects.filter(id_user = id_user).filter(nombre_cv=nombre_cv).values()
+#     # .filter(cv=cv).filter(bloque=bloque)
+#     # json_stuff = simplejson.dumps(model_dict)
+#     # data = model_dict.json()
+#     # data = serializers.serialize('json', model_dict)
 
-    print(model_dict)
+#     print(model_dict)
 
 
 
-    return JsonResponse({"models_to_return": list(model_dict)})
+#     return JsonResponse({"models_to_return": list(model_dict)})
