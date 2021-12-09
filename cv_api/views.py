@@ -1458,6 +1458,18 @@ def eliminaPersonalizados(request, nombre_cv, cv ):
     return redirect('/api')
 
 
+def eliminaObjeto(request, bloque, atributo):
+    model_dict = models.ConfiguracionCv.objects.filter(bloque = bloque).filter(atributo=atributo)
+    print("ELIMINADO", model_dict)
+
+    model_dict.delete()
+
+
+    return redirect('/api')
+
+
+
+
 # from django.http import JsonResponse
 
 # # Filtrada por usuario, Bloque, nombrecv y cvHash

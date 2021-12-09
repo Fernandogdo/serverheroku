@@ -4,13 +4,6 @@ from django.contrib.auth.models import AbstractBaseUser, AbstractUser
 # from django_mysql.models import ListCharField
 
 
-# class Administrador(models.Model):
-#     idAministrador = models.AutoField(primary_key=True)
-
-#     class Meta:
-#         db_table = 'administrador'
-
-
 class Usuario(AbstractUser):
 
     id_user = models.AutoField(primary_key=True)
