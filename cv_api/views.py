@@ -75,6 +75,10 @@ class PersonalizacionUsuario(generics.ListAPIView):
         id_user = self.kwargs['id_user']
         return models.ConfiguracionCv_Personalizado.objects.filter(id_user=id_user)
 
+class ServicioView(viewsets.ModelViewSet):
+    queryset = models.Servicio.objects.all()
+    serializer_class = serializers.ServicioSerializer
+    permission_classes = [IsAuthenticated]
 
 class getdata(viewsets.ModelViewSet):
     serializer_class = serializers.ConfiguracionCv_PersonalizadoSerializer

@@ -10,6 +10,7 @@ router.register(r'configuracioncv', views.ConfiguracionCvView)
 router.register(r'configuracioncv_personalizado', views.ConfiguracionCv_PersonalizadoView)
 router.register(r'usuario', views.UsarioView)
 # router.register(r'administrador', views.AdministradorView)
+router.register(r'servicio', views.ServicioView)
 router.register(r'bloque', views.BloqueView)
 # router.register(r'vistapdf', views.data, basename='mymodel')
 

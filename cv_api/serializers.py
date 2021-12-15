@@ -71,6 +71,11 @@ class ConfiguracionCv_PersonalizadoSerializer(serializers.ModelSerializer):
         fields = ('__all__')
         
 
+
+class ServicioSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Servicio
+        fields = ('__all__')
 # class AppointmentSerializer(serializers.ModelSerializer):
 #     customer = ConfiguracionCv_PersonalizadoSerializer(required=False, allow_null=True)
 

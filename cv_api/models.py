@@ -29,11 +29,20 @@ class ConfiguracionCv(models.Model):
     visible_cv_resumido = models.BooleanField(default=True)
     visible_cv_completo = models.BooleanField(default=True)
     mapeo = models.CharField(max_length=150, null=True, blank=True)
-
+    
 
     class Meta:
         unique_together = ["bloque", "atributo"] 
         db_table = 'configuracionCV'
+
+
+class Servicio(models.Model):
+    bloque: models.CharField(max_length=150)
+    url: models.CharField(max_length=200)
+
+    class Meta:
+        # unique_together = ['bloque', 'url'] 
+        db_table = 'servicio'
         
 
 class ConfiguracionCv_Personalizado(models.Model):
