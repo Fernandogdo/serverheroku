@@ -68,14 +68,10 @@ class LoginSerializer(serializers.Serializer):
 class ConfiguracionCv_PersonalizadoSerializer(serializers.ModelSerializer):
     class Meta:
         model = ConfiguracionCv_Personalizado
-        fields = ('__all__')
+        fields = '__all__'
         
 
 
-class ServicioSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Servicio
-        fields = ('__all__')
 # class AppointmentSerializer(serializers.ModelSerializer):
 #     customer = ConfiguracionCv_PersonalizadoSerializer(required=False, allow_null=True)
 
@@ -91,4 +87,10 @@ class BloqueSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Bloque
+        fields = ('__all__')
+
+
+class ServicioSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Servicio
         fields = ('__all__')

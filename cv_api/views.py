@@ -66,7 +66,7 @@ class LoginView(APIView):
 class BloqueView(viewsets.ModelViewSet):
     queryset = models.Bloque.objects.all()
     serializer_class = serializers.BloqueSerializer
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
 
 class PersonalizacionUsuario(generics.ListAPIView):
@@ -78,7 +78,7 @@ class PersonalizacionUsuario(generics.ListAPIView):
 class ServicioView(viewsets.ModelViewSet):
     queryset = models.Servicio.objects.all()
     serializer_class = serializers.ServicioSerializer
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
 class getdata(viewsets.ModelViewSet):
     serializer_class = serializers.ConfiguracionCv_PersonalizadoSerializer

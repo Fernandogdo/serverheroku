@@ -32,17 +32,10 @@ class ConfiguracionCv(models.Model):
     
 
     class Meta:
+        
         unique_together = ["bloque", "atributo"] 
         db_table = 'configuracionCV'
 
-
-class Servicio(models.Model):
-    bloque: models.CharField(max_length=150)
-    url: models.CharField(max_length=200)
-
-    class Meta:
-        # unique_together = ['bloque', 'url'] 
-        db_table = 'servicio'
         
 
 class ConfiguracionCv_Personalizado(models.Model):
@@ -76,3 +69,13 @@ class Bloque(models.Model):
     class Meta:
         db_table = 'bloque'
 
+
+
+class Servicio(models.Model):
+    id = models.AutoField(primary_key=True)
+    nombreBloque: models.CharField(max_length=150)
+    url: models.CharField(max_length=200)
+
+    class Meta:
+        # unique_together = ['nombre', 'url'] 
+        db_table = 'servicio'
