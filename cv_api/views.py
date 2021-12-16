@@ -68,17 +68,17 @@ class BloqueView(viewsets.ModelViewSet):
     serializer_class = serializers.BloqueSerializer
     # permission_classes = [IsAuthenticated]
 
+class ServicioView(viewsets.ModelViewSet):
+    queryset = models.Servicio.objects.all()
+    serializer_class = serializers.ServicioSerializer
+    # permission_classes = [IsAuthenticated]
+
 
 class PersonalizacionUsuario(generics.ListAPIView):
     serializer_class = serializers.ConfiguracionCv_PersonalizadoSerializer
     def get_queryset(self):
         id_user = self.kwargs['id_user']
         return models.ConfiguracionCv_Personalizado.objects.filter(id_user=id_user)
-
-class ServicioView(viewsets.ModelViewSet):
-    queryset = models.Servicio.objects.all()
-    serializer_class = serializers.ServicioSerializer
-    # permission_classes = [IsAuthenticated]
 
 class getdata(viewsets.ModelViewSet):
     serializer_class = serializers.ConfiguracionCv_PersonalizadoSerializer

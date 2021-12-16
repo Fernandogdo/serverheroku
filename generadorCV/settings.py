@@ -144,6 +144,12 @@ DATABASES = {
         'PASSWORD': '4f2b4joDkQBmv6qgrug',
         'HOST': 'bgcwmzzgpo7zb622ry7r-mysql.services.clever-cloud.com',
         'PORT': '20538',
+        # 'ENGINE': 'django.db.backends.mysql',
+        # 'NAME': 'b37atyaoqlwhjpqn09is',
+        # 'USER': 'uiqkjfnizpyinrtn',
+        # 'PASSWORD': 'mtx89gDpFsw8roCK4Li',
+        # 'HOST': 'b37atyaoqlwhjpqn09is-mysql.services.clever-cloud.com',
+        # 'PORT': '21201',
     }
 }
 

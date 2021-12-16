@@ -72,10 +72,8 @@ class Bloque(models.Model):
 
 
 class Servicio(models.Model):
-    id = models.AutoField(primary_key=True)
-    nombreBloque: models.CharField(max_length=150)
-    url: models.CharField(max_length=200)
+    bloqueNombre = models.CharField(max_length=150)
+    url = models.CharField(max_length=200)
 
     class Meta:
-        # unique_together = ['nombre', 'url'] 
         db_table = 'servicio'
