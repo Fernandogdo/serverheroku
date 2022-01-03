@@ -28,7 +28,7 @@ import urllib.request
 class ConfiguracionCvView(viewsets.ModelViewSet):
     queryset = models.ConfiguracionCv.objects.all()
     serializer_class = serializers.ConfiguracionCvSerializer
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
 
 class ConfiguracionCv_PersonalizadoView(viewsets.ModelViewSet):
