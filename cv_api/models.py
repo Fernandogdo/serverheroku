@@ -72,8 +72,9 @@ class Bloque(models.Model):
 
 
 class Servicio(models.Model):
+    id = models.AutoField(primary_key=True)
     bloqueNombre = models.CharField(max_length=150)
-    url = models.CharField(max_length=200)
+    url = models.URLField(max_length=300)
 
     class Meta:
         db_table = 'servicio'

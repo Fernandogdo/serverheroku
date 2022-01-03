@@ -93,6 +93,9 @@ def InformacionConfCompleto(id):
 
     model_dict = models.ConfiguracionCv.objects.all().values()
     model_bloques = models.Bloque.objects.all().values()
+    model_servicios = models.Servicio.objects.all().values()
+
+    print("MODELSERVICIOS", model_servicios)
 
     r = requests.get(f'https://sica.utpl.edu.ec/ws/api/docentes/{id}/',
                      headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'})
@@ -102,19 +105,25 @@ def InformacionConfCompleto(id):
     temp_data = []
     bloquesLista = []
 
-    for bloques_name in docente['related']:
-        bloquesLista.append(bloques_name)
+    for servicio in model_servicios:   
+        bloquesLista.append(servicio['url'])
+
+    print("LISTA", bloquesLista)
+
+    # for bloques_name in docente['related']:
+    #     bloquesLista.append(bloques_name)
 
     bloquesLista.sort()
+
     '''RECORRE BLOQUES'''
     for bloque in bloquesLista: 
-        lista_ids = [items['id'] for items in docente['related'][bloque]]
+        lista_ids = [items['id'] for items in docente['related'][bloque.rsplit('/', 2)[-2]]]
 
         for id in lista_ids:
-          data_tt = requests.get('https://sica.utpl.edu.ec/ws/api/'+ str(bloque) + "/" + str(id) + "/",
-                     headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'}
-                   )
-          temp_data.append(data_tt.json())
+            data_tt = requests.get(bloque + str(id) + "/",
+                 headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'}
+               )
+            temp_data.append(data_tt.json())
         listaId[bloque] = temp_data
         temp_data = []
 
@@ -1470,6 +1479,17 @@ def eliminaObjeto(request, bloque, atributo):
 
 
     return redirect('/api')
+
+
+def eliminaObjetoBloque(request, bloque):
+    model_dict = models.Bloque.objects.filter(nombre = bloque)
+    print("ELIMINADO", model_dict)
+
+    model_dict.delete()
+
+
+    return redirect('/api')
+
 
 
 
