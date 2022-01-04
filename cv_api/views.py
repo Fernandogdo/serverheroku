@@ -109,9 +109,6 @@ def InformacionConfCompleto(id):
         bloquesLista.append(servicio['url'])
 
 
-    # for bloques_name in docente['related']:
-    #     bloquesLista.append(bloques_name)
-
     bloquesLista.sort()
     print("LISTA", bloquesLista)
 
