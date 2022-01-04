@@ -77,4 +77,5 @@ class Servicio(models.Model):
     url = models.URLField(max_length=300)
 
     class Meta:
+        unique_together = ["bloqueNombre", "url"] 
         db_table = 'servicio'
