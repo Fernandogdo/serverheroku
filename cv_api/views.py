@@ -108,15 +108,19 @@ def InformacionConfCompleto(id):
     for servicio in model_servicios:   
         bloquesLista.append(servicio['url'])
 
-    print("LISTA", bloquesLista)
 
     # for bloques_name in docente['related']:
     #     bloquesLista.append(bloques_name)
 
     bloquesLista.sort()
+    print("LISTA", bloquesLista)
+
 
     '''RECORRE BLOQUES'''
     for bloque in bloquesLista: 
+        print("ServicioNormal", bloque)
+        print("Servicio", bloque.rsplit('/', 2)[-2])
+
         lista_ids = [items['id'] for items in docente['related'][bloque.rsplit('/', 2)[-2]]]
 
         for id in lista_ids:
@@ -124,7 +128,7 @@ def InformacionConfCompleto(id):
                  headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'}
                )
             temp_data.append(data_tt.json())
-        listaId[bloque] = temp_data
+        listaId[bloque.rsplit('/', 2)[-2]] = temp_data
         temp_data = []
 
     bloquesTodos = []
