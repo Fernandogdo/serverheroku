@@ -110,7 +110,7 @@ def InformacionConfCompleto(id):
 
 
     bloquesLista.sort()
-    print("LISTA", bloquesLista)
+    # print("LISTA", bloquesLista)
 
 
     '''RECORRE BLOQUES'''
@@ -137,7 +137,7 @@ def InformacionConfCompleto(id):
     '''Cambia valores None por cadena ('None') '''
     for claveLista, valorLista in listaId.items():
         for valor in valorLista:
-          print(valor)
+        #   print(valor)
           for key, value in valor.items():
             if value is None:
                 value = 'None'
@@ -172,6 +172,9 @@ def InformacionConfCompleto(id):
  
       bloquesInformacion[bloquesTodos[cont]] = data_bloque
       cont+= 1
+
+
+    print("BLOQUESINFORMACION", bloquesTodos)
   
     '''SACA MAPEO SI ATRIBUTO ES TRUE'''
     listadoBloques = dict()
@@ -231,7 +234,7 @@ def InformacionConfCompleto(id):
 '''GENERA PDF COMPLETO'''
 def PdfCompleto(request, id):
     docente, listaFinal = InformacionConfCompleto(id)
-    print("listaResultadosPRUEBA", docente, listaFinal )
+    # print("listaResultadosPRUEBA", docente, listaFinal )
 
     logo = str(settings.BASE_DIR) + '/cv_api/templates/logoutpl.png'
     context = {'logo': logo,
@@ -290,6 +293,9 @@ def JsonCompleto(request, id):
 def InformacionConfResumida(id):
     model_dict = models.ConfiguracionCv.objects.all().values()
     model_bloques = models.Bloque.objects.all().values()
+    model_servicios = models.Servicio.objects.all().values()
+
+    print("MODELSERVICIOS", model_servicios)
 
     r = requests.get(f'https://sica.utpl.edu.ec/ws/api/docentes/{id}/',
                      headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'})
@@ -299,30 +305,35 @@ def InformacionConfResumida(id):
     temp_data = []
     bloquesLista = []
 
-    for bloques_name in docente['related']:
-        bloquesLista.append(bloques_name)
+    for servicio in model_servicios:   
+        bloquesLista.append(servicio['url'])
+
 
     bloquesLista.sort()
+    # print("LISTA", bloquesLista)
+
+
     '''RECORRE BLOQUES'''
     for bloque in bloquesLista: 
-        lista_ids = [items['id'] for items in docente['related'][bloque]]
+        print("ServicioNormal", bloque)
+        print("Servicio", bloque.rsplit('/', 2)[-2])
+
+        lista_ids = [items['id'] for items in docente['related'][bloque.rsplit('/', 2)[-2]]]
 
         for id in lista_ids:
-
-          data_tt = requests.get('https://sica.utpl.edu.ec/ws/api/'+ str(bloque) + "/" + str(id) + "/",
-                     headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'}
-                   )
-          temp_data.append(data_tt.json())
-
-        listaId[bloque] = temp_data
-        temp_data = [] 
+            data_tt = requests.get(bloque + str(id) + "/",
+                 headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'}
+               )
+            temp_data.append(data_tt.json())
+        listaId[bloque.rsplit('/', 2)[-2]] = temp_data
+        temp_data = []
 
     bloquesTodos = []
     for bloque in model_bloques:
-      print("bloque", bloque['nombre'])
       bloquesTodos.append(bloque['nombre'])
 
     bloquesTodos.sort()
+
 
     '''Cambia valores None por cadena ('None') '''
     for claveLista, valorLista in listaId.items():
@@ -343,6 +354,7 @@ def InformacionConfResumida(id):
 
     listaBloques = [[x for x, v in i.items()] for i in bloqueOrdenApi]
     listaBloquesOrdenados = [y for x in listaBloques for y in x]
+
 
     '''SACA VISIBLES SI SON TRUE'''
     diccionario = dict()
@@ -367,6 +379,7 @@ def InformacionConfResumida(id):
     '''SACA MAPEO SI ATRIBUTO ES TRUE'''
     listadoBloques = dict()
     listaMapeados = dict()
+    
 
     for i in listaBloquesOrdenados:
         mapeo = [{'mapeo': d['mapeo'], 'ordenResumido': d['ordenResumido']} for d in model_dict if d.get(
@@ -483,6 +496,8 @@ def InformacionConfPersonalizada(id, nombre_cv, cvHash):
     
     model_dict = models.ConfiguracionCv_Personalizado.objects.all().values().filter(id_user=id).filter(nombre_cv=nombre_cv).filter(cv=cvHash)
     model_bloques = models.Bloque.objects.all().values()
+    model_servicios = models.Servicio.objects.all().values()
+
     dataPersonalizada = model_dict
 
     r = requests.get(f'https://sica.utpl.edu.ec/ws/api/docentes/{id}/',
@@ -493,25 +508,31 @@ def InformacionConfPersonalizada(id, nombre_cv, cvHash):
     temp_data = []
     bloquesLista = []
 
-    for bloques_name in docente['related']:
-        bloquesLista.append(bloques_name)
+    for servicio in model_servicios:   
+        bloquesLista.append(servicio['url'])
+
 
     bloquesLista.sort()
 
-    for bloque in bloquesLista:
-        lista_ids = [items['id'] for items in docente['related'][bloque]]
+    # bloquesLista.sort()
+
+    '''RECORRE BLOQUES'''
+    for bloque in bloquesLista: 
+        print("ServicioNormal", bloque)
+        print("Servicio", bloque.rsplit('/', 2)[-2])
+
+        lista_ids = [items['id'] for items in docente['related'][bloque.rsplit('/', 2)[-2]]]
 
         for id in lista_ids:
-            data_tt = requests.get('https://sica.utpl.edu.ec/ws/api/'+ str(bloque) + "/" + str(id) + "/",
-                       headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'}
-                     )
+            data_tt = requests.get(bloque + str(id) + "/",
+                 headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'}
+               )
             temp_data.append(data_tt.json())
-
-        listaId[bloque] = temp_data
+        listaId[bloque.rsplit('/', 2)[-2]] = temp_data
         temp_data = []
 
-
     bloquesTodos = []
+
     for bloque in model_bloques:
       print("bloque", bloque['nombre'])
       bloquesTodos.append(bloque['nombre'])
@@ -521,7 +542,7 @@ def InformacionConfPersonalizada(id, nombre_cv, cvHash):
     '''Cambia valores None por cadena ('None') '''
     for claveLista, valorLista in listaId.items():
         for valor in valorLista:
-          print(valor)
+        #   print(valor)
           for key, value in valor.items():
             if value is None:
                 value = 'None'
@@ -540,6 +561,8 @@ def InformacionConfPersonalizada(id, nombre_cv, cvHash):
         if t not in seen:
             seen.add(t)
             bloquesOrdenados.append(d)
+
+    print("BLOQUESORDENADOS", bloquesOrdenados)
 
 
     ordenadosBloques = [bloqueOrden for bloqueOrden in bloquesOrdenados if list(bloqueOrden.values()) != [False]]
