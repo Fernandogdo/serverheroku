@@ -28,13 +28,13 @@ import urllib.request
 class ConfiguracionCvView(viewsets.ModelViewSet):
     queryset = models.ConfiguracionCv.objects.all()
     serializer_class = serializers.ConfiguracionCvSerializer
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
 
 class ConfiguracionCv_PersonalizadoView(viewsets.ModelViewSet):
     queryset = models.ConfiguracionCv_Personalizado.objects.all()
     serializer_class = serializers.ConfiguracionCv_PersonalizadoSerializer
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
 
 class UsarioView(viewsets.ModelViewSet):
@@ -631,6 +631,8 @@ def InformacionConfPersonalizada(id, nombre_cv, cvHash):
 def PdfPersonalizado(request, id, nombre_cv, cvHash):
 
     docente, listaFinal = InformacionConfPersonalizada(id, nombre_cv, cvHash)
+
+    print("LISTAFINAL", listaFinal)
 
     logo = str(settings.BASE_DIR) + '/cv_api/templates/logoutpl.png'
     context = {'logo': logo,
@@ -1490,6 +1492,27 @@ def eliminaObjetoBloque(request, bloque):
 
 
     return redirect('/api')
+
+
+
+def eliminaObjetoConfiguracionPersonalizada(request, id_user, nombre_cv, cv, bloque, atributo):
+    model_dict = models.ConfiguracionCv_Personalizado.objects.filter(id_user = id_user).filter(
+        nombre_cv = nombre_cv).filter(cv=cv).filter(bloque=bloque).filter(atributo=atributo)
+    # .filter(cv='7t7bxkhiw4y').filter(bloque = 'Articulos').filter(atributo='area_conocimiento_especifica').values()
+    print("ELIMINADO", model_dict)
+
+    model_dict.delete()
+
+
+    return redirect('/api')
+
+
+# # Guarda los objetos que no se encuentran en un cv personalizado con respecto a los servicios de SIAC
+# def guardaObjetoConfiguracionPersonalizada(request, id_user, bloque, atributo, orden, 
+#     visible_cv_personalizado, mapeo, cv, nombre_cv,fecha_registro, cedula, nombreBloque, 
+#     ordenPersonalizable,visible_cv_bloque):
+#     # model_dict = models.ConfiguracionCv_Personalizado.objects.filter(id_user = id_user).filter(
+
 
 
 
