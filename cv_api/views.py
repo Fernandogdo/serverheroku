@@ -1524,7 +1524,10 @@ def eliminaObjetoConfiguracionPersonalizada(request, id_user, nombre_cv, cv, blo
     # .filter(cv='7t7bxkhiw4y').filter(bloque = 'Articulos').filter(atributo='area_conocimiento_especifica').values()
     print("ELIMINADO", model_dict)
 
+
     model_dict.delete()
+
+    eliminado = 'eliminadoServer'
 
 
     return redirect('/api')
