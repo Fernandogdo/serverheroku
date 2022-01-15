@@ -66,12 +66,12 @@ class LoginView(APIView):
 class BloqueView(viewsets.ModelViewSet):
     queryset = models.Bloque.objects.all()
     serializer_class = serializers.BloqueSerializer
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
 class ServicioView(viewsets.ModelViewSet):
     queryset = models.Servicio.objects.all()
     serializer_class = serializers.ServicioSerializer
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
 
 class PersonalizacionUsuario(generics.ListAPIView):
@@ -236,7 +236,7 @@ def PdfCompleto(request, id):
     docente, listaFinal = InformacionConfCompleto(id)
     # print("listaResultadosPRUEBA", docente, listaFinal )
 
-    logo = str(settings.BASE_DIR) + '/cv_api/templates/logoutpl.png'
+    logo = str(settings.BASE_DIR) + '/cv_api/templates/img/logoutpl.png'
     context = {'logo': logo,
                'docente': docente, 'listaFinal': listaFinal}
     html_string = render_to_string('home_page.html', context)
@@ -253,13 +253,13 @@ def PdfCompleto(request, id):
 
 def DocCompleto(request, id):
     docente, listaFinal = InformacionConfCompleto(id)
-    logo = str(settings.BASE_DIR) + '/cv_api/templates/logoutpl.png'
-    img_template = str(settings.BASE_DIR) + '/cv_api/templates/nieve.jpg'
+    logo = str(settings.BASE_DIR) + '/cv_api/templates/img/logoutpl.png'
+    img_template = str(settings.BASE_DIR) + '/cv_api/templates/img/nieve.jpg'
     response = HttpResponse(content_type='application/msword')
     response['Content-Disposition'] = 'attachment; filename="cv.docx"'
 
     doc = DocxTemplate(str(settings.BASE_DIR) + '/cv_api/templates/docx_filename.docx')
-    f = open(str(settings.BASE_DIR) + '/cv_api/templates/nieve.jpg','wb')
+    f = open(str(settings.BASE_DIR) + '/cv_api/templates/img/nieve.jpg','wb')
     f.write(urllib.request.urlopen(docente['foto_web_low']).read()) 
 
     myimage = InlineImage(doc, image_descriptor=logo, width=Mm(15), height=Mm(25))
@@ -437,7 +437,7 @@ def PdfResumido(request, id):
     docente, listaFinal = InformacionConfResumida(id)
 
     '''Generacion de PDF'''
-    logo = str(settings.BASE_DIR) + '/cv_api/templates/logoutpl.png'
+    logo = str(settings.BASE_DIR) + '/cv_api/templates/img/logoutpl.png'
     context = {'logo': logo,
                'docente': docente, 'listaFinal': listaFinal}
     html_string = render_to_string('home_page.html', context)
@@ -454,13 +454,13 @@ def PdfResumido(request, id):
 def DocResumido(request, id):
 
     docente, listaFinal = InformacionConfResumida(id)
-    logo = str(settings.BASE_DIR) + '/cv_api/templates/logoutpl.png'
-    img_template = str(settings.BASE_DIR) + '/cv_api/templates/nieve.jpg'
+    logo = str(settings.BASE_DIR) + '/cv_api/templates/img/logoutpl.png'
+    img_template = str(settings.BASE_DIR) + '/cv_api/templates/img/nieve.jpg'
     response = HttpResponse(content_type='application/msword')
     response['Content-Disposition'] = 'attachment; filename="cv_resumido.docx"'
 
     doc = DocxTemplate(str(settings.BASE_DIR) + '/cv_api/templates/docx_filename.docx')
-    f = open(str(settings.BASE_DIR) + '/cv_api/templates/nieve.jpg','wb')
+    f = open(str(settings.BASE_DIR) + '/cv_api/templates/img/nieve.jpg','wb')
     f.write(urllib.request.urlopen(docente['foto_web_low']).read()) 
 
     myimage = InlineImage(doc, image_descriptor=logo, width=Mm(15), height=Mm(25))
@@ -657,7 +657,7 @@ def PdfPersonalizado(request, id, nombre_cv, cvHash):
 
     print("LISTAFINAL", listaFinal)
 
-    logo = str(settings.BASE_DIR) + '/cv_api/templates/logoutpl.png'
+    logo = str(settings.BASE_DIR) + '/cv_api/templates/img/logoutpl.png'
     context = {'logo': logo,
                'docente': docente, 'listaFinal': listaFinal}
     html_string = render_to_string('home_page.html', context)
@@ -675,14 +675,14 @@ def PdfPersonalizado(request, id, nombre_cv, cvHash):
 def DocPersonalizado(request, id, nombre_cv, cvHash):
    
     docente, listaFinal = InformacionConfPersonalizada(id, nombre_cv, cvHash)
-    logo = str(settings.BASE_DIR) + '/cv_api/templates/logoutpl.png'
-    img_template = str(settings.BASE_DIR) + '/cv_api/templates/nieve.jpg'
+    logo = str(settings.BASE_DIR) + '/cv_api/templates/img/logoutpl.png'
+    img_template = str(settings.BASE_DIR) + '/cv_api/templates/img/nieve.jpg'
 
     response = HttpResponse(content_type='application/msword')
     response['Content-Disposition'] = 'attachment; filename="cv_personalizado.docx"'
 
     doc = DocxTemplate(str(settings.BASE_DIR) + '/cv_api/templates/docx_filename.docx')
-    f = open(str(settings.BASE_DIR) + '/cv_api/templates/nieve.jpg','wb')
+    f = open(str(settings.BASE_DIR) + '/cv_api/templates/img/nieve.jpg','wb')
     f.write(urllib.request.urlopen(docente['foto_web_low']).read()) 
 
     myimage = InlineImage(doc, image_descriptor=logo, width=Mm(15), height=Mm(25))
