@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+
+from codecs import EncodedFile
 from django.http.response import JsonResponse
 from django.shortcuts import render
 from rest_framework import generics, viewsets
@@ -23,6 +26,8 @@ from bibtexparser.bwriter import BibTexWriter
 from bibtexparser.bibdatabase import BibDatabase
 from django.shortcuts import redirect
 import urllib.request
+import urllib.parse
+
 
 
 class ConfiguracionCvView(viewsets.ModelViewSet):
@@ -79,6 +84,7 @@ class PersonalizacionUsuario(generics.ListAPIView):
     def get_queryset(self):
         id_user = self.kwargs['id_user']
         return models.ConfiguracionCv_Personalizado.objects.filter(id_user=id_user)
+        
 
 class getdata(viewsets.ModelViewSet):
     serializer_class = serializers.ConfiguracionCv_PersonalizadoSerializer
@@ -753,11 +759,19 @@ def InformacionTxtArticulos(request, id):
             fecha = datetime.now()
             titulo = articulo['titulo']
             revista = articulo['revista']
+            estado = articulo['estado']
+            keywords = articulo['keywords']
+            publication_date = articulo['fecha_publicacion']
+            país = articulo['pais']
+            ciudad = articulo['ciudad']
+            indice = articulo['indice']
+            issn = articulo['issn']
+            isbn = articulo['isbn']
             link_articulo = articulo['link_articulo']
             doi = articulo['doi']
             tipo_documento = articulo['tipo_documento']
             publication_stage = articulo['estado']
-            lines.append(f'SIAC UTPL\nEXPORT DATE:{fecha}\n{titulo}\n{revista}\n{link_articulo}\nDOI:{doi}\nDOCUMENT TYPE:{tipo_documento}\nPUBLICATION STAGE:{publication_stage}\nSOURCE:SIAC UTPL\n\n\n\n\n\n')
+            lines.append(f'SIAC UTPL\nEXPORT DATE:{fecha}\n{titulo}\n{publication_date}\n{país}\n{ciudad}\n{indice}\n{issn}\n{isbn}\n{keywords}\n{revista}\n{estado}\n{link_articulo}\nDOI:{doi}\nDOCUMENT TYPE:{tipo_documento}\nPUBLICATION STAGE:{publication_stage}\nSOURCE:SIAC UTPL\n\n\n\n\n\n')
         except:
             print("asdsadsa")
 
@@ -994,8 +1008,14 @@ def informacionCsvArticulos(request, id):
         try:
             const = {
               'Title ': lista['titulo'],
-            #   'comments' : articulo['abstract'],
+              'keywords': lista['keywords'],
+              'journal': lista['revista'],
+              'state': lista['estado'],
               'year' : str(lista['year']),
+              'country': lista['pais'],
+              'city': lista['ciudad'],
+              'issn': lista['issn'],
+              'isbn': lista['isbn'],
               'volume    ' : str(lista['volume']),
               'issue' : lista['issue'],
               'Pages': lista["pages"],
@@ -1009,7 +1029,7 @@ def informacionCsvArticulos(request, id):
         except:
             print("asdassa")
 
-    writer.writerow(['Titulo', 'Year', 'Volume', 'Issue', 'Pages', 'DOI', "Link", "Document Type", "Source"])
+    writer.writerow(['Titulo',  'Keywords', 'Revista', 'Estado', 'Year', 'País', 'Ciudad', 'ISSN', 'ISBN', 'Volume', 'Issue', 'Pages', 'DOI', "Link", "Document Type", "Source"])
     for val in lines:
         print("i", val)
         writer.writerow(v for k, v in val.items())
@@ -1052,21 +1072,25 @@ def informacionCsvLibros(request, id):
     for libro in listaLibrosDocente:
         try:
             const = {
-              'Title ': libro['titulo'],
-              'year' : str(libro['anio']),
-              'isbn' : libro['isbn'],
-              'Pages': libro["paginas"],
-              'link': libro['link_descarga_1'],
-              'link2': libro['link_descarga_2'],
-              'tipo_libro': libro['tipo_libro'],
-              'source': "siac utpl"
+            'title   ' : libro['titulo'],
+            'editor ': libro['editor'],
+            'editorial ': libro['editorial'],
+            'editorial field':libro['ambito_editorial'],
+            'eisbn': libro['eisbn'],
+            'isbn': libro['isbn'],
+            'year' : str(libro['anio']),
+            'paginas': libro['paginas'],
+            'link': libro['link_descarga_1'],
+            'type' : libro['tipo_libro'],
+            'ID' : docente['primer_apellido'] + str(libro['fecha_cierre']),
+            'ENTRYTYPE': 'Book'
             }
             
             lines.append(const)
         except:
             print("asdassa")
 
-    writer.writerow(['Titulo', 'Year', 'ISBN', 'Pages', "Link", "Link2","Document Type", "Source"])
+    writer.writerow(['Titulo',  'Editor', 'Editorial', 'Campo Editorial', 'EISBN', 'ISBN', 'Year', 'Pages', "Link" ,"Document Type", "Source"])
     for val in lines:
         print("i", val)
         writer.writerow(v for k, v in val.items())
@@ -1112,7 +1136,10 @@ def informacionCsvProyectos(request, id):
               'Title ': proyecto['nombre_proyecto'],
               'year' : str(proyecto['fecha_cierre']),
               'programa': proyecto["programa"],
+              'presupuesto': proyecto['presupuesto'],
+              'linea_investigacion': proyecto['linea_investigacion'],
               'tipo_proyecto': proyecto['tipo_proyecto'],
+              'tipo_convocatoria': proyecto['tipo_convocatoria'],
               'estado': proyecto['estado'],
               'source': "siac utpl"
             }
@@ -1121,7 +1148,7 @@ def informacionCsvProyectos(request, id):
         except:
             print("asdassa")
 
-    writer.writerow(['Titulo', 'Year', 'Temática', 'Pages', "Link", "Course Type", "Source"])
+    writer.writerow(['Titulo', 'Year', 'Temática', 'Presupuesto',  'Linea Investigación' , "Tipo curso", "Tipo Convocatoria", "Estado", "Source"])
     for val in lines:
         print("i", val)
         writer.writerow(v for k, v in val.items())
@@ -1167,8 +1194,11 @@ def informacionCsvCapacitacion(request, id):
               'Title ': capacitacion['nombre'],
               'year' : str(capacitacion['fecha_inicio']),
               'tematica' : capacitacion['tematica'],
+              'country': capacitacion['pais'],
+              'city': capacitacion['ciudad'],
               'Pages': capacitacion["paginas"],
               'link': capacitacion['link'],
+              'tipo_formacion': capacitacion['tipo_formacion'],
               'tipo_curso': capacitacion['tipo_curso'],
               'source': "siac utpl"
             }
@@ -1177,7 +1207,7 @@ def informacionCsvCapacitacion(request, id):
         except:
             print("asdassa")
 
-    writer.writerow(['Titulo', 'Year', 'Temática', 'Pages', "Link", "Course Type", "Source"])
+    writer.writerow(['Titulo', 'Year', 'Temática', 'País' , 'Ciudad', 'Páginas', "Link",  "Tipo FOrmación", "Course Type", "Source"])
     for val in lines:
         print("i", val)
         writer.writerow(v for k, v in val.items())
@@ -1223,10 +1253,12 @@ def informacionCsvGradoAcademico(request, id):
             const = {
               'Title ': gradoAcademico['denominacion_titulo'],
               'year' : str(gradoAcademico['fecha_emision']),
+              'emission place': gradoAcademico['lugar_emision'],
               'pais_u_reconocedora' : gradoAcademico['pais_u_reconocedora'],
-            #   'Pages': gradoAcademico["paginas"],
+              'country': gradoAcademico['pais_emision'],
+              'knowledge area': gradoAcademico['linea_investigacion'],
               'universidad_emisora': gradoAcademico['universidad_emisora'],
-              'tipo_titulo': gradoAcademico['tipo_titulo'],
+              'type': gradoAcademico['tipo_titulo'],
               'source': "siac utpl"
             }
             
@@ -1234,7 +1266,7 @@ def informacionCsvGradoAcademico(request, id):
         except:
             print("asdassa")
 
-    writer.writerow(['Titulo', 'Fecha Emisión', 'País', 'Pages', "Universidad Emisora", "Course Type", "Source"])
+    writer.writerow(['Titulo', 'Fecha Emisión', 'Lugar Emisión', 'País Universidad Reconocedora', 'País Emisión', 'Linea Investigación', "Universidad Emisora", "Course Type", "Source"])
     for val in lines:
         print("i", val)
         writer.writerow(v for k, v in val.items())
@@ -1274,8 +1306,19 @@ def InformacionBibTexArticulos(request, id):
               'abstract' : articulo['abstract'],
               'title   ' : articulo['titulo'],
               'year    ' : str(articulo['year']),
+              'country': articulo['pais'],
+              'city': articulo['ciudad'],
+              'doi': articulo['doi'],
+              'condition': articulo['estado'],
               'volume  ' : str(articulo['volume']),
+              'index': articulo['indice'],
+              'issn': articulo['issn'],
+              'isbn': str(articulo['isbn']),
+              'issue': str(articulo['issue']),
+              'type': articulo['tipo_documento'],
+              'pages':articulo['pages'],
               'ID' : docente['primer_apellido'] + str(articulo['year']),
+              'link': articulo['link_articulo'],
               'keywords': articulo["keywords"],
               'ENTRYTYPE': 'article'
             }
@@ -1322,15 +1365,18 @@ def InformacionBibTexLibros(request, id):
     lines = []
     for libro in listaLibrosDocente:
         const = {
-          'editorial ': libro['editorial'],
-          'comments' : "asdsa",
-          'abstract' : 'description test',
-          'title   ' : libro['titulo'],
-          'year    ' : str(libro['anio']),
-          'volume  ' : '1',
-          'ID' : docente['primer_apellido'] + str(libro['anio']),
-          'ENTRYTYPE': 'book'
-        }
+              'title   ' : libro['titulo'],
+              'editor ': str(libro['editor']),
+              'editorial ': libro['editorial'],
+              'editorial field':libro['ambito_editorial'],
+              'eisbn': libro['eisbn'],
+              'isbn': libro['isbn'],
+              'year' : str(libro['anio']),
+              'type' : str(libro['tipo_libro']),
+              'link': libro['link_descarga_1'],
+              'ID' : docente['primer_apellido'] + str(libro['anio']),
+              'ENTRYTYPE': 'Book'
+            }
         lines.append(const)
 
     response = BibDatabase()
@@ -1361,7 +1407,7 @@ def InformacionBibTexProyectos(request, id):
     ''' Saca articulos de docentes por ID'''
     listaProyectosDocente = []
     for id in idsLibros:
-       r = requests.get('https://sica.utpl.edu.ec/ws/api/libros/' + str(id) + "/",
+       r = requests.get('https://sica.utpl.edu.ec/ws/api/proyectos/' + str(id) + "/",
                         headers={
                             'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'}
                         )
@@ -1372,14 +1418,20 @@ def InformacionBibTexProyectos(request, id):
     for proyecto in listaProyectosDocente:
         try:
             const = {
-              'journal ': proyecto['descripcion'],
-              'comments' : proyecto['descripcion'],
-              'abstract' : proyecto['descripcion'],
               'title   ' : proyecto['nombre_proyecto'],
-              'year    ' : str(proyecto['fecha_cierre']),
-              'volume  ' : '1',
+              'description ': proyecto['descripcion'],
+              'project coverage ': proyecto['cobertura_proyecto'],
+              'project code':proyecto['codigo_proyecto'],
+              'research line':proyecto['linea_investigacion'],
+              'condition': proyecto['estado'],
+              'date' : str(proyecto['fecha_cierre']),
+              'knowledge area': proyecto['area_conocimiento'],
+              'type' : proyecto['tipo_proyecto'],
+              'organization': proyecto['organizacion'],
+              'percentage': proyecto['porcentaje_avance'],
+              'program':proyecto['programa'],
               'ID' : docente['primer_apellido'] + str(proyecto['fecha_cierre']),
-              'ENTRYTYPE': 'proyect'
+              'ENTRYTYPE': 'Project'
             }
             lines.append(const)
         except:
@@ -1422,12 +1474,18 @@ def InformacionBibTexCapacitaciones(request, id):
     for capacitacion in listaCapacitacionesDocente:
         print("CAPACITACION", capacitacion)
         const = {
-            'journal ': capacitacion['tematica'],
-            'comments' : capacitacion['comite_organizador'],
+            'Título' : capacitacion['nombre'],
+            'Tematica ': capacitacion['tematica'],
+            'Comite Organizador' : capacitacion['comite_organizador'],
             'abstract' : capacitacion['comite_organizador'],
-            'title   ' : capacitacion['nombre'],
-            'date    ' : capacitacion['fecha_fin'],
-            'volume  ' : '1',
+            'Fecha' : capacitacion['fecha_fin'],
+            'País' : capacitacion['pais'],
+            'Ciudad' : capacitacion['ciudad'],
+            'Tipo Curso' : capacitacion['tipo_curso'],
+            'Tipo Formación' : capacitacion['tipo_formacion'],
+            'Tipo Participación' : capacitacion['tipo_participacion'],
+            'Institución Organizadora' : capacitacion['institucion_organizadora'],
+            'Área Conocimiento' : capacitacion['area_conocimiento'],
             'ID' : docente['primer_apellido'] + capacitacion['fecha_fin'],
             'ENTRYTYPE': 'capacitation'
         }
@@ -1448,7 +1506,7 @@ def InformacionBibTexGradoAcademico(request, id):
                      headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'})
     docente = r.json()
     
-    '''Saca id Libros '''
+    '''Saca id Grado Academico '''
     listaidLibros = []
     for infoLibros in docente['related']['grado-academico']:
         listaidLibros.append(infoLibros)
@@ -1471,11 +1529,14 @@ def InformacionBibTexGradoAcademico(request, id):
         print("CAPACITACION", gradoAcademico)
         const = {
             'lugar_emision ': gradoAcademico['lugar_emision'],
-            'pais_u_reconocedora' : gradoAcademico['pais_u_reconocedora'],
-            'universidad_emisora' : gradoAcademico['universidad_emisora'],
-            'denominacion_titulo   ' : gradoAcademico['denominacion_titulo'],
-            'date    ' : gradoAcademico['fecha_emision'],
-            'volume  ' : '1',
+            'Universidad Reconocedora' : gradoAcademico['universidad_reconocedora'],
+            'País Universidad Reconocedora' : gradoAcademico['pais_u_reconocedora'],
+            'Universidad Emisora' : gradoAcademico['universidad_emisora'],
+            'Denominación Título' : gradoAcademico['denominacion_titulo'],
+            'Área Conocimiento' : gradoAcademico['area_conocimiento'],
+            'date' : gradoAcademico['fecha_emision'],
+            'tipo_titulo' : gradoAcademico['tipo_titulo'],
+            'País': gradoAcademico['pais_emision'],
             'ID' : docente['primer_apellido'] + gradoAcademico['fecha_emision'],
             'ENTRYTYPE': 'capacitation'
         }
@@ -1497,9 +1558,12 @@ def eliminaPersonalizados(request, nombre_cv, cv ):
     return redirect('/api')
 
 
-def eliminaObjeto(request, bloque, atributo):
+def eliminaObjetoConfiguracion(request, bloque, atributo):
+    # bloque.encode('utf-8')
+    # bloqueBorrar = encoded8.decode('utf-8')
     model_dict = models.ConfiguracionCv.objects.filter(bloque = bloque).filter(atributo=atributo)
     print("ELIMINADO", model_dict)
+    
 
     model_dict.delete()
 
@@ -1508,8 +1572,14 @@ def eliminaObjeto(request, bloque, atributo):
 
 
 def eliminaObjetoBloque(request, bloque):
-    model_dict = models.Bloque.objects.filter(nombre = bloque)
+    bloque_decoded = urllib.parse.unquote(bloque)
+
+    print("bloque_decoded", bloque_decoded)
+
+    model_dict = models.Bloque.objects.filter(nombre = bloque_decoded)
     print("ELIMINADO", model_dict)
+
+
 
     model_dict.delete()
 
