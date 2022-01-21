@@ -40,7 +40,7 @@ class ConfiguracionCv(models.Model):
 
 class ConfiguracionCv_Personalizado(models.Model):
     id = models.AutoField(primary_key=True)
-    id_user = models.ForeignKey(Usuario, on_delete=models.CASCADE)
+    id_user = models.CharField(max_length=11)
     bloque = models.CharField(max_length=150)
     atributo = models.CharField(max_length=100)
     orden = models.IntegerField(default=1)
@@ -54,7 +54,7 @@ class ConfiguracionCv_Personalizado(models.Model):
     ordenPersonalizable = models.IntegerField(default=1)
     visible_cv_bloque = models.BooleanField(default=True)
     class Meta:
-        unique_together = ["bloque", "atributo", "nombre_cv", "cedula"] 
+        # unique_together = ["bloque", "atributo", "nombre_cv", "cedula"] 
         db_table = 'configuracioncvPersonalizado'
 
         
