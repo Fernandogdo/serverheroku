@@ -1274,7 +1274,133 @@ def informacionCsvGradoAcademico(request, id):
     return response  
 
 
+'''CSV TODOS'''
+def informacionCsvGradoAcademico(request, id):
+    r = requests.get(f'https://sica.utpl.edu.ec/ws/api/docentes/{id}/',
+                     headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'})
+
+    docente = r.json()
+
+    '''Saca id Libros '''
+    listaidCapacitaciones = []
+    for infoLibros in docente['related']['grado-academico']:
+        listaidCapacitaciones.append(infoLibros)
+
+    idsLibros = [fila['id'] for fila in listaidCapacitaciones]
+
+
+    ''' Saca libros de docentes por ID'''
+    listaCapacitacionesDocente = []
+    for idLibro in idsLibros:
+        r = requests.get('https://sica.utpl.edu.ec/ws/api/grado-academico/' + str(idLibro) + "/",
+                         headers={
+                             'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'}
+                         )
+        todos = r.json()
+        listaCapacitacionesDocente.append(todos)
+        print('listaLibros------------>>>>>>>>>>>>>>>>>',listaCapacitacionesDocente)
+
+    response = HttpResponse(content_type='text/csv')  
+    response['Content-Disposition'] = 'attachment; filename="file.csv"'  
+    writer = csv.writer(response)  
+
+
+    lines = []
+    for gradoAcademico in listaCapacitacionesDocente:
+        try:
+            const = {
+              'Title ': gradoAcademico['denominacion_titulo'],
+              'year' : str(gradoAcademico['fecha_emision']),
+              'emission place': gradoAcademico['lugar_emision'],
+              'pais_u_reconocedora' : gradoAcademico['pais_u_reconocedora'],
+              'country': gradoAcademico['pais_emision'],
+              'knowledge area': gradoAcademico['linea_investigacion'],
+              'universidad_emisora': gradoAcademico['universidad_emisora'],
+              'type': gradoAcademico['tipo_titulo'],
+              'source': "siac utpl"
+            }
+            
+            lines.append(const)
+        except:
+            print("asdassa")
+
+    writer.writerow(['Titulo', 'Fecha Emisión', 'Lugar Emisión', 'País Universidad Reconocedora', 'País Emisión', 'Linea Investigación', "Universidad Emisora", "Course Type", "Source"])
+    for val in lines:
+        print("i", val)
+        writer.writerow(v for k, v in val.items())
+
+    return response  
+
+
 # -------------------------------------------------------GENERACION DE BIBTEX----------------------------------------------
+def InformacionBibTex(request, bloque, idUsuario):
+    r = requests.get(f'https://sica.utpl.edu.ec/ws/api/docentes/{idUsuario}/',
+                     headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'})
+    docente = r.json()
+
+    print('docente', docente)
+
+    print('BLOQUE', bloque)
+    
+    '''Saca id Articulos '''
+    listaidArticulos = []
+    for infobloque in docente['related'][bloque]:
+        listaidArticulos.append(infobloque)
+
+    idsArticulos = [fila['id'] for fila in listaidArticulos]
+
+    ''' Saca articulos de docentes por ID'''
+    listaArticulosDocente = []
+    for id in idsArticulos:
+       r = requests.get(f'https://sica.utpl.edu.ec/ws/api/{bloque}/' + str(id) + "/",
+                        headers={
+                            'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'}
+                        )
+       todos = r.json()
+       listaArticulosDocente.append(todos)
+
+    diccionario = dict()
+
+
+    lines = []
+
+    listaEliminar = ['id', 'authors']
+
+    for articulo in listaArticulosDocente:
+        try:
+            variables  = articulo.items()
+
+            for k,v in variables:
+
+                diccionario[k]= str(v)
+                if k == 'year' :
+                    print("SIESIGUAL")
+                    diccionario['ID'] = docente['primer_apellido'] + str(v)
+
+                if k in listaEliminar :
+                    del diccionario[k]
+
+            diccionario['ENTRYTYPE'] = 'article'
+            diccionario['author'] = docente['primer_apellido']
+
+        except:
+            print("asdassa")
+
+        lines.append(diccionario)
+        diccionario = {}
+
+    response = BibDatabase()
+    response.entries = lines
+    writer = BibTexWriter()
+    data = writer.write(response)
+    
+    response = HttpResponse(data, content_type='text/x-bibtex')  
+    response['Content-Disposition'] = 'attachment; filename="file.bib"' 
+
+    return response
+
+
+
 def InformacionBibTexArticulos(request, id):
     r = requests.get(f'https://sica.utpl.edu.ec/ws/api/docentes/{id}/',
                      headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'})
@@ -1297,36 +1423,36 @@ def InformacionBibTexArticulos(request, id):
        todos = r.json()
        listaArticulosDocente.append(todos)
 
+    diccionario = dict()
+
 
     lines = []
+
+    listaEliminar = ['id', 'authors']
+
     for articulo in listaArticulosDocente:
         try:
-            const = {
-              'journal ': articulo['revista'],
-              'abstract' : articulo['abstract'],
-              'title   ' : articulo['titulo'],
-              'year    ' : str(articulo['year']),
-              'country': articulo['pais'],
-              'city': articulo['ciudad'],
-              'doi': articulo['doi'],
-              'condition': articulo['estado'],
-              'volume  ' : str(articulo['volume']),
-              'index': articulo['indice'],
-              'issn': articulo['issn'],
-              'isbn': str(articulo['isbn']),
-              'issue': str(articulo['issue']),
-              'type': articulo['tipo_documento'],
-              'pages':articulo['pages'],
-              'ID' : docente['primer_apellido'] + str(articulo['year']),
-              'link': articulo['link_articulo'],
-              'keywords': articulo["keywords"],
-              'ENTRYTYPE': 'article'
-            }
-            lines.append(const)
+            variables  = articulo.items()
+
+            for k,v in variables:
+
+                diccionario[k]= str(v)
+                if k == 'year' :
+                    print("SIESIGUAL")
+                    diccionario['ID'] = docente['primer_apellido'] + str(v)
+
+                if k in listaEliminar :
+                    del diccionario[k]
+
+            diccionario['ENTRYTYPE'] = 'article'
+            diccionario['author'] = docente['primer_apellido']
+
         except:
             print("asdassa")
 
-    print(lines)
+        lines.append(diccionario)
+        diccionario = {}
+
     response = BibDatabase()
     response.entries = lines
     writer = BibTexWriter()
