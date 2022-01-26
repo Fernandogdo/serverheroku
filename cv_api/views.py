@@ -102,7 +102,7 @@ def InformacionConfCompleto(id):
     model_bloques = models.Bloque.objects.all().values()
     model_servicios = models.Servicio.objects.all().values()
 
-    print("MODELSERVICIOS", model_servicios)
+    # print("MODELSERVICIOS", model_servicios)
 
     r = requests.get(f'https://sica.utpl.edu.ec/ws/api/docentes/{id}/',
                      headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'})
@@ -245,9 +245,165 @@ def InformacionConfCompleto(id):
         tituloBloque = {}
         tituloDic = {}
 
-    print("listaFinalArchivos", listaFinalArchivos)
+    # print("listaFinalArchivos", listaFinalArchivos)
 
     return docente, listaFinal, listaFinalArchivos
+
+
+
+def InformacionCompletaArchivos(id):
+
+    model_dict = models.ConfiguracionCv.objects.all().values()
+    model_bloques = models.Bloque.objects.all().values()
+    model_servicios = models.Servicio.objects.all().values()
+
+    print("MODELSERVICIOS", model_servicios)
+
+    r = requests.get(f'https://sica.utpl.edu.ec/ws/api/docentes/{id}/',
+                     headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'})
+    docente = r.json()
+
+    listaId = dict()
+    temp_data = []
+    bloquesLista = []
+
+    for servicio in model_servicios:   
+        bloquesLista.append(servicio['url'])
+
+
+    bloquesLista.sort()
+    # print("LISTA", bloquesLista)
+
+
+    '''RECORRE BLOQUES'''
+    for bloque in bloquesLista: 
+        # print("ServicioNormal", bloque)
+        # print("Servicio", bloque.rsplit('/', 2)[-2])
+
+        lista_ids = [items['id'] for items in docente['related'][bloque.rsplit('/', 2)[-2]]]
+
+        for id in lista_ids:
+            data_tt = requests.get(bloque + str(id) + "/",
+                 headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'}
+               )
+            temp_data.append(data_tt.json())
+        listaId[bloque.rsplit('/', 2)[-2]] = temp_data
+        temp_data = []
+
+    bloquesTodos = []
+    for bloque in model_bloques:
+      bloquesTodos.append(bloque['nombreService'])
+
+    bloquesTodos.sort()
+
+    '''Cambia valores None por cadena ('None') '''
+    for claveLista, valorLista in listaId.items():
+        for valor in valorLista:
+        #   print(valor)
+          for key, value in valor.items():
+            if value is None:
+                value = 'None'
+            valor[key] = value
+
+
+    '''BLOQUES DE MODEL BLOQUES ORDENADOS '''
+    ordenadosBloques = sorted(
+        model_bloques, key=lambda orden: orden['ordenCompleto'])
+    bloqueOrdenApi = [{b['nombreService']: b['visible_cv_bloqueCompleto']}
+                      for b in ordenadosBloques]
+
+    bloqueOrdenApi = [bloqueOrden for bloqueOrden in bloqueOrdenApi if list(bloqueOrden.values()) != [False]]
+
+    listaBloques = [[x for x, v in i.items()] for i in bloqueOrdenApi]
+    listaBloquesOrdenados = [y for x in listaBloques for y in x]
+
+    '''SACA VISIBLES SI SON TRUE'''
+    diccionario = dict()
+    for i in listaBloquesOrdenados:
+        visibles = [{'nombreService': d['atributo'], 'ordenCompleto': d['ordenCompleto']}
+                    for d in model_dict if d.get("visible_cv_completo") and d.get('bloqueService') == i]
+        ordenadosAtributos = sorted(visibles, key=lambda orden: orden['ordenCompleto'])
+        listaatrvisibles = [[valor for clave, valor in i.items(
+        ) if clave == 'nombreService'] for i in ordenadosAtributos]
+        listaVisiblesAtr = [y for x in listaatrvisibles for y in x]
+        diccionario[i] = listaVisiblesAtr
+
+    bloquesInformacion = dict()
+    cont = 0
+    for name_bloque, data_bloque in listaId.items():
+ 
+      bloquesInformacion[bloquesTodos[cont]] = data_bloque
+      cont+= 1
+
+
+    print("BLOQUESINFORMACION", bloquesTodos)
+  
+    '''SACA MAPEO SI ATRIBUTO ES TRUE'''
+    listadoBloques = dict()
+    listaMapeados = dict()
+    
+
+    for i in listaBloquesOrdenados:
+        mapeo = [{'mapeo': d['mapeo'], 'ordenCompleto': d['ordenCompleto']} for d in model_dict if d.get(
+            "visible_cv_completo") and d.get('bloqueService') == i]
+        ordenadosMapeo = sorted(mapeo, key=lambda orden: orden['ordenCompleto'])
+
+        listamapeoisibles = [[valor for clave, valor in i.items(
+        ) if clave == 'mapeo'] for i in ordenadosMapeo]
+        listaVisiblesmapeo = [y for x in listamapeoisibles for y in x]
+
+        mapeados = pd.unique(listaVisiblesmapeo)
+        listaMapeados[i] = mapeados
+        filtrados = [{atributo: d.get(atributo) for atributo in diccionario[i] if d.get(
+            atributo) != None} for d in bloquesInformacion[i]]
+        listadoBloques[i] = filtrados
+ 
+    bloqueAtributos = dict()
+    for listadoBloque in listadoBloques:
+        bloqueAtributos[listadoBloque] = [{atributo: d.get(atributo) for atributo in diccionario[listadoBloque] if d.get(
+            atributo) != None} for d in bloquesInformacion[listadoBloque]]
+
+    i = []
+    for i in listaBloquesOrdenados:
+        for filtrado in bloqueAtributos[i]:
+            filtrado["mapeo"] = [fil for fil in listaMapeados[i]]
+
+    bloquesInfoRestante = {k: v for k, v in bloqueAtributos.items() if v != []}
+
+    bloquesRestantes = []
+
+    for bloqueInfRes in bloquesInfoRestante:
+        bloquesRestantes.append(bloqueInfRes)
+
+    listaArchivos = []
+    listaResultados = []
+    # listaArchivosResultados = []
+    listaFinal = list()
+    listaFinalArchivos = list()
+    tituloBloque = dict()
+    tituloDic = dict()
+
+    for i in bloquesRestantes:
+        tituloBloque['-'] = i.upper()
+        tituloDic =  i
+        listaResultados.append(tituloBloque)
+        listaArchivos.append(tituloDic)
+        for bloqueInformacion in bloquesInfoRestante[i]:
+            resultados = dict(
+                zip(bloqueInformacion['mapeo'], bloqueInformacion.values()))
+            listaResultados.append(resultados)
+            listaArchivos.append(resultados)
+        listaFinal.append(listaResultados)
+        listaFinalArchivos.append(listaArchivos)
+        listaArchivos = []
+        listaResultados = []
+        tituloBloque = {}
+        tituloDic = {}
+
+    print("listaFinalArchivos", listaFinalArchivos)
+
+    return listaFinalArchivos
+
 
 
 '''GENERA PDF COMPLETO'''
@@ -1418,7 +1574,7 @@ def informacionCsv(request,bloque, idDocente):
 
 # -------------------------------------------------------GENERACION DE BIBTEX----------------------------------------------
 def InformacionBibTex(request, bloque, idUsuario):
-    docentes, listaFinal, listaFinalArchivos = InformacionConfCompleto(idUsuario)
+    docenteInfo, listaFinal,listaFinalArchivos = InformacionConfCompleto(idUsuario)
     r = requests.get(f'https://sica.utpl.edu.ec/ws/api/docentes/{idUsuario}/',
                      headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'})
     docente = r.json()
@@ -1426,43 +1582,46 @@ def InformacionBibTex(request, bloque, idUsuario):
     # bloque_decoded = urllib.parse.unquote(bloque)
     # atributo_decoded = urllib.parse.unquote(atributo)
 
-    print('docente', docente)
+    # print('docente', docente)
 
-    # print('BLOQUE', bloque_decoded)
+    print('BLOQUE', bloque)
     
-    '''Saca id Articulos '''
-    listaidArticulos = []
-    for infobloque in docente['related'][bloque]:
-        listaidArticulos.append(infobloque)
+    # '''Saca id Articulos '''
+    # listaidArticulos = []
+    # for infobloque in docente['related'][bloque]:
+    #     listaidArticulos.append(infobloque)
 
-    idsArticulos = [fila['id'] for fila in listaidArticulos]
+    # idsArticulos = [fila['id'] for fila in listaidArticulos]
 
-    ''' Saca articulos de docentes por ID'''
-    listaArticulosDocente = []
-    for id in idsArticulos:
-       r = requests.get(f'https://sica.utpl.edu.ec/ws/api/{bloque}/' + str(id) + "/",
-                        headers={
-                            'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'}
-                        )
-       todos = r.json()
-       listaArticulosDocente.append(todos)
+    # ''' Saca articulos de docentes por ID'''
+    # listaArticulosDocente = []
+    # for id in idsArticulos:
+    #    r = requests.get(f'https://sica.utpl.edu.ec/ws/api/{bloque}/' + str(id) + "/",
+    #                     headers={
+    #                         'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'}
+    #                     )
+    #    todos = r.json()
+    #    listaArticulosDocente.append(todos)
 
     print("LUSTARTICULOSBIBTEX", listaFinalArchivos)
 
-    # bloque = 'LIBROS'
+    # bloque = 'libros'
 
     listaVacia = []
-    for busqueda in listaFinalArchivos:
-      if bloque == busqueda[0]:
-        for i in busqueda:
-          listaVacia.append(i)
+    try:
+        for busqueda in listaFinalArchivos:
+          if bloque == busqueda[0]:
+            for i in busqueda:
+              listaVacia.append(i)
 
-    listaVacia.remove(bloque)
-    print("LISTAVACIA", listaVacia)
+        listaVacia.remove(bloque)
+        print("LISTAVACIA", listaVacia)
+    except:
+        print("asdsad")
 
     diccionario = dict()
     lines = []
-    listaEliminar = ['id', 'authors']
+    listaEliminar = ['id', 'authors', 'Año', 'anio']
     for articulo in listaVacia:
         try:
             variables  = articulo.items()
@@ -1476,9 +1635,9 @@ def InformacionBibTex(request, bloque, idUsuario):
 
                 # else:
 
-                if k == 'year' :
+                if k == 'Año' :
                     print("SIESIGUAL")
-                    # diccionario['ID'] = docente['primer_apellido'] + str(v)
+                    diccionario['ID'] = docente['primer_apellido'] + str(v)
 
                 if k in listaEliminar :
                     del diccionario[k]
@@ -1486,14 +1645,29 @@ def InformacionBibTex(request, bloque, idUsuario):
                 if k == '' :
                     del diccionario[k]
 
+            diccionario['author'] = docente['primer_apellido']
+
             if bloque == 'LIBROS':
                 diccionario['ENTRYTYPE'] = 'book'
             
             if bloque == 'ARTÍCULOS':
                 diccionario['ENTRYTYPE'] = 'article'
+            
+            if bloque == 'GRADO ACADÉMICO':
+                diccionario['ENTRYTYPE'] = 'academic'
 
-            diccionario['author'] = docente['primer_apellido']
-            diccionario['ID'] = docente['primer_apellido'] + str(v)
+            if bloque == 'capacitacion':
+                diccionario['ENTRYTYPE'] = 'capacitation'
+
+            if bloque == 'tesis':
+                diccionario['ENTRYTYPE'] = 'tesis'
+
+            if bloque == 'proyectos':
+                diccionario['ENTRYTYPE'] = 'project'
+
+
+
+            # diccionario['ID'] = docente['primer_apellido'] + str(v)
 
         except:
             print("asdassa")
@@ -1501,13 +1675,15 @@ def InformacionBibTex(request, bloque, idUsuario):
         lines.append(diccionario)
         diccionario = {}
 
+   
     response = BibDatabase()
     response.entries = lines
     writer = BibTexWriter()
     data = writer.write(response)
-    
     response = HttpResponse(data, content_type='text/x-bibtex')  
     response['Content-Disposition'] = 'attachment; filename="file.bib"' 
+
+    # print("asdsa")
 
     return response
 

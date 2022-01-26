@@ -50,7 +50,7 @@ urlpatterns = [
   # path('informacion_csv_proyectos/<int:id>', views.informacionCsvProyectos),
   # path('informacion_csv_capacitaciones/<int:id>', views.informacionCsvCapacitacion),
   # path('informacion_csv_grado-academico/<int:id>', views.informacionCsvGradoAcademico),
-  re_path('^informacion_bibtex/(?P<bloque>)/(?P<idUsuario>)/$', views.InformacionBibTex),
+  path('informacion_bibtex/<str:bloque>/<int:idUsuario>', views.InformacionBibTex),
   # path('informacion_bib_articulos/<int:id>', views.InformacionBibTexArticulos),
   # path('informacion_bib_libros/<int:id>', views.InformacionBibTexLibros),
   # path('informacion_bib_proyectos/<int:id>', views.InformacionBibTexProyectos),
