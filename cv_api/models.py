@@ -23,6 +23,7 @@ class ConfiguracionCv(models.Model):
     usuario = models.ForeignKey(
         Usuario, related_name='Usuario', on_delete=models.CASCADE)
     bloque = models.CharField(max_length=150)
+    bloqueService = models.CharField(max_length=150, default="articulos")
     atributo = models.CharField(max_length=100)
     ordenCompleto = models.IntegerField(default=1)
     ordenResumido = models.IntegerField(default=1)
@@ -61,6 +62,7 @@ class ConfiguracionCv_Personalizado(models.Model):
                 
 class Bloque(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
+    nombreService = models.CharField(max_length=100, default="")
     ordenCompleto = models.IntegerField(default=1 )
     ordenResumido = models.IntegerField(default=0)
     ordenPersonalizable = models.IntegerField(default=0)
