@@ -44,7 +44,7 @@ urlpatterns = [
   # path('personalizados/<int:id_user>/<slug:bloque>/<slug:nombre_cv>/<slug:cv>', views.getConfPersonalizada),
   # path('crea-bibtext/<int:id>', views.generaBibTex),
   # path('prueba/<int:idDocente>', views.InformacionCompletaArchivos),
-  path('informacion_csv/<str:bloque>/<int:idDocente>', views.informacionCsv),
+  path('informacion_csv/<slug:bloque>/<int:idDocente>', views.informacionCsv),
   # path('informacion_csv_articulos/<int:id>', views.informacionCsvArticulos),
   # path('informacion_csv_libros/<int:id>', views.informacionCsvLibros),
   # path('informacion_csv_proyectos/<int:id>', views.informacionCsvProyectos),

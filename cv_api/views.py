@@ -230,9 +230,9 @@ def InformacionConfCompleto(id):
 
 def InformacionCompletaArchivos(bloque, idDocente):
     model_dict = models.ConfiguracionCv.objects.all().values()
-    model_bloques = models.Bloque.objects.filter(nombre = bloque).values()
-
-    print("MODELSERVICIOS", model_bloques)
+    model_bloques = models.Bloque.objects.filter(nombreService = bloque).values()
+    # print("BLOQUE", bloque)
+    # print("MODELSERVICIOS", model_bloques)
 
     r = requests.get(f'https://sica.utpl.edu.ec/ws/api/docentes/{idDocente}/',
                      headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'})
@@ -290,16 +290,22 @@ def InformacionCompletaArchivos(bloque, idDocente):
 
     bloquesInformacion = dict()
     cont = 0
+    # try:
+
     for name_bloque, data_bloque in listaId.items():
- 
+    
       bloquesInformacion[bloquesTodos[cont]] = data_bloque
       cont+= 1
   
+    # except:
+    #     print("ERROR")
+
     '''SACA MAPEO SI ATRIBUTO ES TRUE'''
     listadoBloques = dict()
     listaMapeados = dict()
     
 
+    
     for i in listaBloquesOrdenados:
         mapeo = [{'mapeo': d['mapeo'], 'ordenCompleto': d['ordenCompleto']} for d in model_dict if d.get(
             "visible_cv_completo") and d.get('bloqueService') == i]
@@ -895,10 +901,13 @@ def informacionCsv(request,bloque, idDocente):
         datos = [k for k, v in val.items()]
 
     valor = 'Título'
-    writer.writerow([val if val != '' else valor for val in datos])
+    try:
+        writer.writerow([val if val != '' else valor for val in datos])
 
-    for val in lines:
-        writer.writerow(v for k, v in val.items())
+        for val in lines:
+            writer.writerow(v for k, v in val.items())
+    except:
+        print("ERROR")
 
     return response  
 
@@ -923,7 +932,7 @@ def InformacionBibTex(request, bloque, idDocente):
 
     diccionario = dict()
     lines = []
-    listaEliminar = ['id', 'authors', 'Año', 'anio']
+    # listaEliminar = ['id', 'authors', 'Año', 'anio']
     for articulo in listaVacia:
         try:
             variables  = articulo.items()
@@ -937,8 +946,8 @@ def InformacionBibTex(request, bloque, idDocente):
                 if k == 'Año' :
                     diccionario['ID'] = docente['primer_apellido'] + str(v)
 
-                if k in listaEliminar :
-                    del diccionario[k]
+                # if k in listaEliminar :
+                #     del diccionario[k]
 
                 if k == '' :
                     del diccionario[k]
