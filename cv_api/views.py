@@ -664,7 +664,7 @@ def InformacionConfPersonalizada(id, nombre_cv, cvHash):
     '''BLOQUES DE MODEL BLOQUES ORDENADOS '''
     ordenadosBloquesAPi = sorted(
         dataPersonalizada, key=lambda orden: orden['ordenPersonalizable'])
-    bloqueOrdenApi = [{b['nombreBloque']: b['visible_cv_bloque']}
+    bloqueOrdenApi = [{b['bloque']: b['visible_cv_bloque']}
                       for b in ordenadosBloquesAPi]
 
     seen = set()
