@@ -51,7 +51,6 @@ class ConfiguracionCv_Personalizado(models.Model):
     nombre_cv = models.CharField(max_length=100, default="personalizado_cv")
     fecha_registro = models.DateTimeField(null=True, blank=True)
     cedula = models.CharField(max_length=11)
-    nombreBloque = models.CharField(max_length=20, default="Articulos")
     ordenPersonalizable = models.IntegerField(default=1)
     visible_cv_bloque = models.BooleanField(default=True)
     class Meta:
