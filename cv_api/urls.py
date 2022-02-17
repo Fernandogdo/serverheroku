@@ -40,7 +40,7 @@ urlpatterns = [
   path('elimina-personalizados/<slug:nombre_cv>/<slug:cv>', views.eliminaPersonalizados), 
   path('elimina-objeto/<slug:bloque>/<slug:atributo>', views.eliminaObjetoConfiguracion), 
   path('elimina-objetobloque/<slug:bloque>', views.eliminaObjetoBloque),
-  path('elimina-objetoconfpersonalizada/<int:id_user>/<slug:nombre_cv>/<slug:cv>/<slug:bloque>/<slug:atributo>', views.eliminaObjetoConfiguracionPersonalizada),
+  path('elimina-objetoconfpersonalizada/<int:id_user>/<slug:nombre_cv>/<slug:cv>/<str:bloque>/<slug:atributo>', views.eliminaObjetoConfiguracionPersonalizada),
   # path('personalizados/<int:id_user>/<slug:bloque>/<slug:nombre_cv>/<slug:cv>', views.getConfPersonalizada),
   # path('crea-bibtext/<int:id>', views.generaBibTex),
   # path('prueba/<int:idDocente>', views.InformacionCompletaArchivos),
