@@ -231,8 +231,8 @@ def InformacionConfCompleto(id):
 def InformacionCompletaArchivos(bloque, idDocente):
     model_dict = models.ConfiguracionCv.objects.all().values()
     model_bloques = models.Bloque.objects.filter(nombreService = bloque).values()
-    # print("BLOQUE", bloque)
-    # print("MODELSERVICIOS", model_bloques)
+    print("BLOQUE", bloque)
+    print("MODELSERVICIOS", model_bloques)
 
     r = requests.get(f'https://sica.utpl.edu.ec/ws/api/docentes/{idDocente}/',
                      headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'})
@@ -258,6 +258,8 @@ def InformacionCompletaArchivos(bloque, idDocente):
 
     bloquesTodos.sort()
 
+    print("BLOQUESTODOS", bloquesTodos)
+
     '''Cambia valores None por cadena ('None') '''
     for claveLista, valorLista in listaId.items():
         for valor in valorLista:
@@ -272,6 +274,7 @@ def InformacionCompletaArchivos(bloque, idDocente):
     bloqueOrdenApi = [{b['nombreService']: b['visible_cv_bloqueCompleto']}
                       for b in ordenadosBloques]
 
+    print("bloqueOrdenApi", bloqueOrdenApi)
     bloqueOrdenApi = [bloqueOrden for bloqueOrden in bloqueOrdenApi if list(bloqueOrden.values()) != [False]]
 
     listaBloques = [[x for x, v in i.items()] for i in bloqueOrdenApi]
@@ -289,6 +292,8 @@ def InformacionCompletaArchivos(bloque, idDocente):
         diccionario[i] = listaVisiblesAtr
 
     bloquesInformacion = dict()
+
+    print("diccionario", diccionario)
     cont = 0
     # try:
 
@@ -304,6 +309,8 @@ def InformacionCompletaArchivos(bloque, idDocente):
     listadoBloques = dict()
     listaMapeados = dict()
     
+
+    print("listaBloquesOrdenados", listaBloquesOrdenados)
 
     
     for i in listaBloquesOrdenados:
