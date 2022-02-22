@@ -1,7 +1,4 @@
-# from codecs import EncodedFile
 from django.http.response import JsonResponse
-# from django.shortcuts import render
-# from numpy import source          
 from rest_framework import generics, viewsets
 from rest_framework.views import APIView
 from django.contrib.auth import login as django_login
@@ -199,31 +196,20 @@ def InformacionConfCompleto(id):
     for bloqueInfRes in bloquesInfoRestante:
         bloquesRestantes.append(bloqueInfRes)
 
-    # listaArchivos = []
     listaResultados = []
     listaFinal = list()
-    # listaFinalArchivos = list()
     tituloBloque = dict()
-    # tituloDic = dict()
 
     for i in bloquesRestantes:
         tituloBloque['-'] = i.upper()
-        # tituloDic =  i.upper()
         listaResultados.append(tituloBloque)
-        # listaArchivos.append(tituloDic)
         for bloqueInformacion in bloquesInfoRestante[i]:
             resultados = dict(
                 zip(bloqueInformacion['mapeo'], bloqueInformacion.values()))
             listaResultados.append(resultados)
-            # listaArchivos.append(resultados)
         listaFinal.append(listaResultados)
-        # listaFinalArchivos.append(listaArchivos)
-        # listaArchivos = []
         listaResultados = []
         tituloBloque = {}
-        # tituloDic = {}
-
-    # print("listaFinalArchivos", listaFinalArchivos)
 
     return docente, listaFinal
 
@@ -231,9 +217,7 @@ def InformacionConfCompleto(id):
 def InformacionCompletaArchivos(bloque, idDocente):
     model_dict = models.ConfiguracionCv.objects.all().values()
     model_bloques = models.Bloque.objects.filter(nombreService = bloque).values()
-    print("BLOQUE", bloque)
-    print("MODELSERVICIOS", model_bloques)
-
+    
     r = requests.get(f'https://sica.utpl.edu.ec/ws/api/docentes/{idDocente}/',
                      headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'})
     docente = r.json()
@@ -258,8 +242,6 @@ def InformacionCompletaArchivos(bloque, idDocente):
 
     bloquesTodos.sort()
 
-    print("BLOQUESTODOS", bloquesTodos)
-
     '''Cambia valores None por cadena ('None') '''
     for claveLista, valorLista in listaId.items():
         for valor in valorLista:
@@ -274,7 +256,6 @@ def InformacionCompletaArchivos(bloque, idDocente):
     bloqueOrdenApi = [{b['nombreService']: b['visible_cv_bloqueCompleto']}
                       for b in ordenadosBloques]
 
-    print("bloqueOrdenApi", bloqueOrdenApi)
     bloqueOrdenApi = [bloqueOrden for bloqueOrden in bloqueOrdenApi if list(bloqueOrden.values()) != [False]]
 
     listaBloques = [[x for x, v in i.items()] for i in bloqueOrdenApi]
@@ -293,25 +274,15 @@ def InformacionCompletaArchivos(bloque, idDocente):
 
     bloquesInformacion = dict()
 
-    print("diccionario", diccionario)
     cont = 0
-    # try:
 
     for name_bloque, data_bloque in listaId.items():
-    
       bloquesInformacion[bloquesTodos[cont]] = data_bloque
       cont+= 1
   
-    # except:
-    #     print("ERROR")
-
     '''SACA MAPEO SI ATRIBUTO ES TRUE'''
     listadoBloques = dict()
     listaMapeados = dict()
-    
-
-    print("listaBloquesOrdenados", listaBloquesOrdenados)
-
     
     for i in listaBloquesOrdenados:
         mapeo = [{'mapeo': d['mapeo'], 'ordenCompleto': d['ordenCompleto']} for d in model_dict if d.get(
@@ -346,27 +317,19 @@ def InformacionCompletaArchivos(bloque, idDocente):
         bloquesRestantes.append(bloqueInfRes)
 
     listaArchivos = []
-    listaResultados = []
-    listaFinal = list()
     listaFinalArchivos = list()
-    tituloBloque = dict()
     tituloDic = dict()
 
     for i in bloquesRestantes:
-        # tituloBloque['-'] = i.upper()
         tituloDic =  i
-        # listaResultados.append(tituloBloque)
         listaArchivos.append(tituloDic)
         for bloqueInformacion in bloquesInfoRestante[i]:
             resultados = dict(
                 zip(bloqueInformacion['mapeo'], bloqueInformacion.values()))
-            # listaResultados.append(resultados)
             listaArchivos.append(resultados)
-        # listaFinal.append(listaResultados)
         listaFinalArchivos.append(listaArchivos)
         listaArchivos = []
-        # listaResultados = []
-        # tituloBloque = {}
+        
         tituloDic = {}
 
     return listaFinalArchivos
@@ -422,7 +385,6 @@ def JsonCompleto(request, id):
     listaFinal.append(listaDocente)
 
     jsonString = json.dumps(listaFinal,  ensure_ascii=False).encode('utf8')
-    print(jsonString)
     response = HttpResponse(jsonString.decode(), content_type='application/json')
     response['Content-Disposition'] = 'attachment; filename=export.json'
    
@@ -434,8 +396,6 @@ def InformacionConfResumida(id):
     model_dict = models.ConfiguracionCv.objects.all().values()
     model_bloques = models.Bloque.objects.all().values()
     model_servicios = models.Servicio.objects.all().values()
-
-    print("MODELSERVICIOS", model_servicios)
 
     r = requests.get(f'https://sica.utpl.edu.ec/ws/api/docentes/{id}/',
                      headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'})
@@ -451,9 +411,6 @@ def InformacionConfResumida(id):
 
     '''RECORRE BLOQUES'''
     for bloque in bloquesLista: 
-        print("ServicioNormal", bloque)
-        print("Servicio", bloque.rsplit('/', 2)[-2])
-
         lista_ids = [items['id'] for items in docente['related'][bloque.rsplit('/', 2)[-2]]]
 
         for id in lista_ids:
@@ -473,7 +430,6 @@ def InformacionConfResumida(id):
     '''Cambia valores None por cadena ('None') '''
     for claveLista, valorLista in listaId.items():
         for valor in valorLista:
-          print(valor)
           for key, value in valor.items():
             if value is None:
                 value = 'None'
@@ -614,7 +570,6 @@ def JsonResumido(request, id):
     listaFinal.append(listaDocente)
 
     jsonString = json.dumps(listaFinal,  ensure_ascii=False).encode('utf8')
-    print(jsonString)
     response = HttpResponse(jsonString.decode(), content_type='application/json')
     response['Content-Disposition'] = 'attachment; filename=export.json'
    
@@ -662,7 +617,6 @@ def InformacionConfPersonalizada(id, nombre_cv, cvHash):
     '''Cambia valores None por cadena ('None') '''
     for claveLista, valorLista in listaId.items():
         for valor in valorLista:
-        #   print(valor)
           for key, value in valor.items():
             if value is None:
                 value = 'None'
@@ -811,7 +765,6 @@ def JsonPersonalizado(request, id, nombre_cv, cvHash):
     listaFinal.append(listaDocente)
 
     jsonString = json.dumps(listaFinal,  ensure_ascii=False).encode('utf8')
-    print(jsonString)
     response = HttpResponse(jsonString.decode(), content_type='application/json')
     response['Content-Disposition'] = 'attachment; filename=export.json'
    
@@ -849,7 +802,7 @@ def InformacionTxt(request, bloque, idDocente):
                 lines.append(f'{diccionario}\n')
 
             if k in listaEliminar:
-                print("sdsad")
+                print("")
             else:
 
                 diccionario = k + ":" + str(v)
@@ -878,7 +831,7 @@ def informacionCsv(request,bloque, idDocente):
 
         listaVacia.remove(bloque)
     except:
-        print("asdsad")
+        print("")
 
     response = HttpResponse(content_type='text/csv')  
     response['Content-Disposition'] = 'attachment; filename="file.csv"'  
@@ -914,7 +867,7 @@ def informacionCsv(request,bloque, idDocente):
         for val in lines:
             writer.writerow(v for k, v in val.items())
     except:
-        print("ERROR")
+        print("")
 
     return response  
 
@@ -940,6 +893,7 @@ def InformacionBibTex(request, bloque, idDocente):
     diccionario = dict()
     lines = []
     # listaEliminar = ['id', 'authors', 'Año', 'anio']
+    titulo = dict()
     for articulo in listaVacia:
         try:
             variables  = articulo.items()
@@ -950,15 +904,26 @@ def InformacionBibTex(request, bloque, idDocente):
                 if k == '':
                     diccionario['Título']= str(v)
 
-                if k == 'Año' :
-                    diccionario['ID'] = docente['primer_apellido'] + str(v)
-
-                # if k in listaEliminar :
-                #     del diccionario[k]
-
                 if k == '' :
                     del diccionario[k]
 
+                if k == 'Año' :
+                    diccionario['ID'] = docente['primer_apellido'] + str(v)
+
+                if k == 'year' :
+                    diccionario['ID'] = docente['primer_apellido'] + str(v)
+                
+                if k == 'anio' :
+                    diccionario['ID'] = docente['primer_apellido'] + str(v)
+
+                if k == 'fecha_emision' :
+                    diccionario['ID'] = docente['primer_apellido'] + str(v)
+
+                if k == 'fecha_fin' :
+                    diccionario['ID'] = docente['primer_apellido'] + str(v)
+
+                if k == 'fecha_cierre' :
+                    diccionario['ID'] = docente['primer_apellido'] + str(v)
 
             if bloque == 'libros':
                 diccionario['ENTRYTYPE'] = 'book'
@@ -984,34 +949,35 @@ def InformacionBibTex(request, bloque, idDocente):
         lines.append(diccionario)
         diccionario = {}
 
+    for k in lines:
+        for v, a in k.items():
+          if a.startswith('['):
+            lines.remove(k)
+    
     response = BibDatabase()
-    response.entries = lines
+    response.entries = lines 
     writer = BibTexWriter()
     data = writer.write(response)
+        
     response = HttpResponse(data, content_type='text/x-bibtex')  
     response['Content-Disposition'] = 'attachment; filename="file.bib"' 
-
+    
     return response
-
-
+    
 def eliminaPersonalizados(request, nombre_cv, cv ):
     model_dict = models.ConfiguracionCv_Personalizado.objects.filter(nombre_cv = nombre_cv).filter(cv=cv)
     model_dict.delete()
     return redirect('/api')
 
-
 def eliminaObjetoConfiguracion(request, bloque, atributo):
     model_dict = models.ConfiguracionCv.objects.filter(bloque = bloque).filter(atributo=atributo)
-    # print("ELIMINADO", model_dict)
     model_dict.delete()
     return redirect('/api')
-
 
 def eliminaObjetoBloque(request, bloque):
     model_dict = models.Bloque.objects.filter(nombre = bloque)
     model_dict.delete()
     return redirect('/api')
-
 
 def eliminaObjetoConfiguracionPersonalizada(request, id_user, nombre_cv, cv, bloque, atributo):
     model_dict = models.ConfiguracionCv_Personalizado.objects.filter(id_user = id_user).filter(
