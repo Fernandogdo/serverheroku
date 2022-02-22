@@ -1,11 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, AbstractUser
-# Create your models here.
-# from django_mysql.models import ListCharField
 
 
 class Usuario(AbstractUser):
-
     id_user = models.AutoField(primary_key=True)
     first_name = models.CharField(max_length=100, default="testname")
     last_name = models.CharField(max_length=100, default="test_lastname")
@@ -31,14 +28,12 @@ class ConfiguracionCv(models.Model):
     visible_cv_completo = models.BooleanField(default=True)
     mapeo = models.CharField(max_length=150, null=True, blank=True)
     
-
     class Meta:
         
         unique_together = ["bloque", "atributo"] 
         db_table = 'configuracionCV'
 
         
-
 class ConfiguracionCv_Personalizado(models.Model):
     id = models.AutoField(primary_key=True)
     id_user = models.CharField(max_length=11)
@@ -53,12 +48,11 @@ class ConfiguracionCv_Personalizado(models.Model):
     cedula = models.CharField(max_length=11)
     ordenPersonalizable = models.IntegerField(default=1)
     visible_cv_bloque = models.BooleanField(default=True)
+
     class Meta:
-        # unique_together = ["bloque", "atributo", "nombre_cv", "cedula"] 
         db_table = 'configuracioncvPersonalizado'
 
         
-                
 class Bloque(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
     nombreService = models.CharField(max_length=100, default="")
@@ -69,7 +63,6 @@ class Bloque(models.Model):
     visible_cv_bloqueResumido = models.BooleanField(default=True)
     class Meta:
         db_table = 'bloque'
-
 
 
 class Servicio(models.Model):

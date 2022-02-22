@@ -24,17 +24,13 @@ from django.shortcuts import redirect
 import urllib.request
 import urllib.parse
 
-
-
 class ConfiguracionCvView(viewsets.ModelViewSet):
     queryset = models.ConfiguracionCv.objects.all()
     serializer_class = serializers.ConfiguracionCvSerializer
 
-
 class ConfiguracionCv_PersonalizadoView(viewsets.ModelViewSet):
     queryset = models.ConfiguracionCv_Personalizado.objects.all()
     serializer_class = serializers.ConfiguracionCv_PersonalizadoSerializer
-
 
 class UsarioView(viewsets.ModelViewSet):
     queryset = models.Usuario.objects.all()
@@ -48,7 +44,6 @@ class UsarioView(viewsets.ModelViewSet):
             permission_classes = [IsAdminUser]
         return [permission() for permission in permission_classes]
 
-
 class LoginView(APIView):
     permission_classes = []
 
@@ -61,28 +56,23 @@ class LoginView(APIView):
         token, created = Token.objects.get_or_create(user=user)
         return Response({"token": token.key, "username": test.data}, status=200)
 
-
 class BloqueView(viewsets.ModelViewSet):
     queryset = models.Bloque.objects.all()
     serializer_class = serializers.BloqueSerializer
-    # permission_classes = [IsAuthenticated]
 
 class ServicioView(viewsets.ModelViewSet):
     queryset = models.Servicio.objects.all()
     serializer_class = serializers.ServicioSerializer
-    # permission_classes = [IsAuthenticated]
-
 
 class PersonalizacionUsuario(generics.ListAPIView):
     serializer_class = serializers.ConfiguracionCv_PersonalizadoSerializer
     def get_queryset(self):
         id_user = self.kwargs['id_user']
         return models.ConfiguracionCv_Personalizado.objects.filter(id_user=id_user)
-        
 
 
 # -------------------------------------------------------GENERACION DE INFORMACION-CONFIGURACION COMPLETA----------------------------------------------
-'''OBTIENE INFO CONFIGURACION COMPLETA'''
+'''OBTIENE INFO CONFIGURACION COMPLETA PARA GENERAR PDF, DOCX Y JSON COMPLETO'''
 def InformacionConfCompleto(id):
     model_dict = models.ConfiguracionCv.objects.all().values()
     model_bloques = models.Bloque.objects.all().values()
@@ -96,11 +86,8 @@ def InformacionConfCompleto(id):
     temp_data = []
     bloquesLista = []
 
-    for servicio in model_servicios:   
-        bloquesLista.append(servicio['url'])
-    bloquesLista.sort()
-
-
+    bloquesLista = [servicio['url'] for servicio in model_servicios]
+   
     '''RECORRE BLOQUES'''
     for bloque in bloquesLista: 
 
@@ -114,9 +101,7 @@ def InformacionConfCompleto(id):
         listaId[bloque.rsplit('/', 2)[-2]] = temp_data
         temp_data = []
 
-    bloquesTodos = []
-    for bloque in model_bloques:
-      bloquesTodos.append(bloque['nombre'])
+    bloquesTodos = [bloque['nombre'] for bloque in model_bloques]
 
     bloquesTodos.sort()
 
@@ -127,7 +112,6 @@ def InformacionConfCompleto(id):
             if value is None:
                 value = 'None'
             valor[key] = value
-
 
     '''BLOQUES DE MODEL BLOQUES ORDENADOS '''
     ordenadosBloques = sorted(
@@ -142,6 +126,16 @@ def InformacionConfCompleto(id):
 
     '''SACA VISIBLES SI SON TRUE'''
     diccionario = dict()
+    listadoBloques = dict()
+    listaMapeados = dict()
+
+    bloquesInformacion = dict()
+    cont = 0
+    for name_bloque, data_bloque in listaId.items():
+ 
+      bloquesInformacion[bloquesTodos[cont]] = data_bloque
+      cont+= 1
+
     for i in listaBloquesOrdenados:
         visibles = [{'nombre': d['atributo'], 'ordenCompleto': d['ordenCompleto']}
                     for d in model_dict if d.get("visible_cv_completo") and d.get('bloque') == i]
@@ -151,20 +145,7 @@ def InformacionConfCompleto(id):
         listaVisiblesAtr = [y for x in listaatrvisibles for y in x]
         diccionario[i] = listaVisiblesAtr
 
-    bloquesInformacion = dict()
-    cont = 0
-    for name_bloque, data_bloque in listaId.items():
- 
-      bloquesInformacion[bloquesTodos[cont]] = data_bloque
-      cont+= 1
-
-
-    '''SACA MAPEO SI ATRIBUTO ES TRUE'''
-    listadoBloques = dict()
-    listaMapeados = dict()
-    
-
-    for i in listaBloquesOrdenados:
+        '''SACA MAPEO SI ATRIBUTO ES TRUE'''
         mapeo = [{'mapeo': d['mapeo'], 'ordenCompleto': d['ordenCompleto']} for d in model_dict if d.get(
             "visible_cv_completo") and d.get('bloque') == i]
         ordenadosMapeo = sorted(mapeo, key=lambda orden: orden['ordenCompleto'])
@@ -178,6 +159,7 @@ def InformacionConfCompleto(id):
         filtrados = [{atributo: d.get(atributo) for atributo in diccionario[i] if d.get(
             atributo) != None} for d in bloquesInformacion[i]]
         listadoBloques[i] = filtrados
+    
  
     bloqueAtributos = dict()
     for listadoBloque in listadoBloques:
@@ -191,10 +173,7 @@ def InformacionConfCompleto(id):
 
     bloquesInfoRestante = {k: v for k, v in bloqueAtributos.items() if v != []}
 
-    bloquesRestantes = []
-
-    for bloqueInfRes in bloquesInfoRestante:
-        bloquesRestantes.append(bloqueInfRes)
+    bloquesRestantes = [bloqueInfRes for bloqueInfRes in bloquesInfoRestante]
 
     listaResultados = []
     listaFinal = list()
@@ -213,7 +192,7 @@ def InformacionConfCompleto(id):
 
     return docente, listaFinal
 
-
+'''Información para generar CSV, TXT Y BIBTEX con Configuración de CV Completo'''
 def InformacionCompletaArchivos(bloque, idDocente):
     model_dict = models.ConfiguracionCv.objects.all().values()
     model_bloques = models.Bloque.objects.filter(nombreService = bloque).values()
@@ -224,7 +203,6 @@ def InformacionCompletaArchivos(bloque, idDocente):
 
     listaId = dict()
     temp_data = []
-    
     
     '''RECORRE BLOQUES'''
     lista_ids = [items['id'] for items in docente['related'][bloque]]
@@ -263,6 +241,16 @@ def InformacionCompletaArchivos(bloque, idDocente):
 
     '''SACA VISIBLES SI SON TRUE'''
     diccionario = dict()
+    listadoBloques = dict()
+    listaMapeados = dict()
+
+    bloquesInformacion = dict()
+
+    cont = 0
+
+    for name_bloque, data_bloque in listaId.items():
+      bloquesInformacion[bloquesTodos[cont]] = data_bloque
+      cont+= 1
     for i in listaBloquesOrdenados:
         visibles = [{'nombreService': d['atributo'], 'ordenCompleto': d['ordenCompleto']}
                     for d in model_dict if d.get("visible_cv_completo") and d.get('bloqueService') == i]
@@ -272,19 +260,7 @@ def InformacionCompletaArchivos(bloque, idDocente):
         listaVisiblesAtr = [y for x in listaatrvisibles for y in x]
         diccionario[i] = listaVisiblesAtr
 
-    bloquesInformacion = dict()
-
-    cont = 0
-
-    for name_bloque, data_bloque in listaId.items():
-      bloquesInformacion[bloquesTodos[cont]] = data_bloque
-      cont+= 1
-  
-    '''SACA MAPEO SI ATRIBUTO ES TRUE'''
-    listadoBloques = dict()
-    listaMapeados = dict()
-    
-    for i in listaBloquesOrdenados:
+        '''SACA MAPEO SI ATRIBUTO ES TRUE'''
         mapeo = [{'mapeo': d['mapeo'], 'ordenCompleto': d['ordenCompleto']} for d in model_dict if d.get(
             "visible_cv_completo") and d.get('bloqueService') == i]
         ordenadosMapeo = sorted(mapeo, key=lambda orden: orden['ordenCompleto'])
@@ -298,7 +274,7 @@ def InformacionCompletaArchivos(bloque, idDocente):
         filtrados = [{atributo: d.get(atributo) for atributo in diccionario[i] if d.get(
             atributo) != None} for d in bloquesInformacion[i]]
         listadoBloques[i] = filtrados
- 
+
     bloqueAtributos = dict()
     for listadoBloque in listadoBloques:
         bloqueAtributos[listadoBloque] = [{atributo: d.get(atributo) for atributo in diccionario[listadoBloque] if d.get(
@@ -334,8 +310,6 @@ def InformacionCompletaArchivos(bloque, idDocente):
 
     return listaFinalArchivos
 
-
-
 '''GENERA PDF COMPLETO'''
 def PdfCompleto(request, id):
     docente, listaFinal = InformacionConfCompleto(id)
@@ -353,7 +327,7 @@ def PdfCompleto(request, id):
     return response
 
 
-'''DOCUMENTO WORD COMPLETO'''
+'''GENERA DOCUMENTO WORD COMPLETO'''
 def DocCompleto(request, id):
     docente, listaFinal = InformacionConfCompleto(id)
     logo = str(settings.BASE_DIR) + '/cv_api/templates/img/logoutpl.png'
@@ -390,8 +364,8 @@ def JsonCompleto(request, id):
    
     return response
 
-
 # -------------------------------------------------------GENERACION DE INFORMACION-CONFIGURACION RESUMIDA----------------------------------------------
+'''GENERA INFORMACIÓN DE CONFIGURACIÓN RESUMIDA PARA GENERAR PDF, DOCX Y JSON RESUMIDO'''
 def InformacionConfResumida(id):
     model_dict = models.ConfiguracionCv.objects.all().values()
     model_bloques = models.Bloque.objects.all().values()
@@ -438,8 +412,9 @@ def InformacionConfResumida(id):
     '''BLOQUES DE MODEL BLOQUES ORDENADOS '''
     ordenadosBloques = sorted(
         model_bloques, key=lambda orden: orden['ordenResumido'])
-    bloqueOrdenApi = [{b['nombre']: b['ordenResumido']}
+    bloqueOrdenApi = [{b['nombre']: b['visible_cv_bloqueResumido']}
                       for b in ordenadosBloques]
+                      
 
     bloqueOrdenApi = [bloqueOrden for bloqueOrden in bloqueOrdenApi if list(bloqueOrden.values()) != [0]]
 
@@ -448,15 +423,8 @@ def InformacionConfResumida(id):
 
     '''SACA VISIBLES SI SON TRUE'''
     diccionario = dict()
-    for i in listaBloquesOrdenados:
-        visibles = [{'nombre': d['atributo'], 'ordenResumido': d['ordenResumido']}
-                    for d in model_dict if d.get("visible_cv_resumido") and d.get('bloque') == i]
-        ordenadosAtributos = sorted(visibles, key=lambda orden: orden['ordenResumido'])
-        listaatrvisibles = [[valor for clave, valor in i.items(
-        ) if clave == 'nombre'] for i in ordenadosAtributos]
-        listaVisiblesAtr = [y for x in listaatrvisibles for y in x]
-        diccionario[i] = listaVisiblesAtr
-
+    listadoBloques = dict()
+    listaMapeados = dict()
 
     bloquesInformacion = dict()
     cont = 0
@@ -464,12 +432,18 @@ def InformacionConfResumida(id):
  
       bloquesInformacion[bloquesTodos[cont]] = data_bloque
       cont+= 1
-  
-    '''SACA MAPEO SI ATRIBUTO ES TRUE'''
-    listadoBloques = dict()
-    listaMapeados = dict()
     
     for i in listaBloquesOrdenados:
+        visibles = [{'nombre': d['atributo'], 'ordenResumido': d['ordenResumido']}
+                    for d in model_dict if d.get("visible_cv_resumido") and d.get('bloque') == i]
+        # print("visibles", visibles)
+        ordenadosAtributos = sorted(visibles, key=lambda orden: orden['ordenResumido'])
+        listaatrvisibles = [[valor for clave, valor in i.items(
+        ) if clave == 'nombre'] for i in ordenadosAtributos]
+        listaVisiblesAtr = [y for x in listaatrvisibles for y in x]
+        diccionario[i] = listaVisiblesAtr
+
+        '''SACA MAPEO SI ATRIBUTO ES TRUE'''
         mapeo = [{'mapeo': d['mapeo'], 'ordenResumido': d['ordenResumido']} for d in model_dict if d.get(
             "visible_cv_resumido") and d.get('bloque') == i]
         ordenadosMapeo = sorted(mapeo, key=lambda orden: orden['ordenResumido'])
@@ -498,8 +472,7 @@ def InformacionConfResumida(id):
     bloquesInfoRestante = {k: v for k, v in bloqueAtributos.items() if v != []}
     bloquesRestantes = []
 
-    for bloqueInfRes in bloquesInfoRestante:
-        bloquesRestantes.append(bloqueInfRes)
+    bloquesRestantes = [bloqueInfRes for bloqueInfRes in bloquesInfoRestante]
 
     listaResultados = []
     listaFinal = list()
@@ -536,7 +509,6 @@ def PdfResumido(request, id):
 
     return response
 
-
 '''GENERA DOC RESUMIDO'''
 def DocResumido(request, id):
     docente, listaFinal = InformacionConfResumida(id)
@@ -558,7 +530,6 @@ def DocResumido(request, id):
 
     return response
 
-
 '''GENERA JSON RESUMIDO'''
 def JsonResumido(request, id):
     
@@ -575,8 +546,8 @@ def JsonResumido(request, id):
    
     return response
 
-
 # -------------------------------------------------------GENERACION DE INFORMACION-CONFIGURACION PERSONALIZADA----------------------------------------------
+'''GENERA INFORMACIÓN DE CONFIGURACIÓN PERSONALIZADA PARA GENERAR PDF, DOCXC Y JSON PERSONALIZADOS'''
 def InformacionConfPersonalizada(id, nombre_cv, cvHash):
     model_dict = models.ConfiguracionCv_Personalizado.objects.all().values().filter(id_user=id).filter(nombre_cv=nombre_cv).filter(cv=cvHash)
     model_bloques = models.Bloque.objects.all().values()
@@ -714,7 +685,6 @@ def InformacionConfPersonalizada(id, nombre_cv, cvHash):
 
     return docente, listaFinal
 
-
 '''GENERA PDF PERSONALIZADO'''
 def PdfPersonalizado(request, id, nombre_cv, cvHash):
     docente, listaFinal = InformacionConfPersonalizada(id, nombre_cv, cvHash)
@@ -730,7 +700,6 @@ def PdfPersonalizado(request, id, nombre_cv, cvHash):
     response['Content-Disposition'] = 'inline; filename="cv_personalizado.pdf"'
 
     return response
-
 
 '''DOCUMENTO WORD PERSONALIZADO'''
 def DocPersonalizado(request, id, nombre_cv, cvHash):
@@ -769,7 +738,6 @@ def JsonPersonalizado(request, id, nombre_cv, cvHash):
     response['Content-Disposition'] = 'attachment; filename=export.json'
    
     return response
-
 
 # -------------------------------------------------------GENERACION DE TXT----------------------------------------------
 def InformacionTxt(request, bloque, idDocente):
@@ -817,7 +785,6 @@ def InformacionTxt(request, bloque, idDocente):
 
     return response
 
-
 # -------------------------------------------------------GENERACION DE CSV----------------------------------------------
 def informacionCsv(request,bloque, idDocente):
     listaFinalArchivos = InformacionCompletaArchivos(bloque, idDocente)
@@ -832,6 +799,8 @@ def informacionCsv(request,bloque, idDocente):
         listaVacia.remove(bloque)
     except:
         print("")
+
+        
 
     response = HttpResponse(content_type='text/csv')  
     response['Content-Disposition'] = 'attachment; filename="file.csv"'  
@@ -871,7 +840,6 @@ def informacionCsv(request,bloque, idDocente):
 
     return response  
 
-
 # -------------------------------------------------------GENERACION DE BIBTEX----------------------------------------------
 def InformacionBibTex(request, bloque, idDocente):
     listaFinalArchivos = InformacionCompletaArchivos(bloque, idDocente)
@@ -892,13 +860,11 @@ def InformacionBibTex(request, bloque, idDocente):
 
     diccionario = dict()
     lines = []
-    # listaEliminar = ['id', 'authors', 'Año', 'anio']
-    titulo = dict()
+    listaAnios = ['Año', 'anio', 'year', 'fecha_senescyt', 'fecha_emision']
     for articulo in listaVacia:
         try:
             variables  = articulo.items()
             for k,v in variables:
-
                 diccionario[k]= str(v)
 
                 if k == '':
@@ -907,16 +873,7 @@ def InformacionBibTex(request, bloque, idDocente):
                 if k == '' :
                     del diccionario[k]
 
-                if k == 'Año' :
-                    diccionario['ID'] = docente['primer_apellido'] + str(v)
-
-                if k == 'year' :
-                    diccionario['ID'] = docente['primer_apellido'] + str(v)
-                
-                if k == 'anio' :
-                    diccionario['ID'] = docente['primer_apellido'] + str(v)
-
-                if k == 'fecha_emision' :
+                if k in listaAnios:
                     diccionario['ID'] = docente['primer_apellido'] + str(v)
 
                 if k == 'fecha_fin' :
@@ -938,7 +895,7 @@ def InformacionBibTex(request, bloque, idDocente):
                 diccionario['ENTRYTYPE'] = 'capacitation'
 
             if bloque == 'tesis':
-                diccionario['ENTRYTYPE'] = 'tesis'
+                diccionario['ENTRYTYPE'] = 'thesis'
 
             if bloque == 'proyectos':
                 diccionario['ENTRYTYPE'] = 'project'

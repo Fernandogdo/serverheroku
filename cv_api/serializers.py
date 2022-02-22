@@ -10,14 +10,6 @@ class PatchModelSerializer(serializers.ModelSerializer):
         super(PatchModelSerializer, self).__init__(*args, **kwargs)
 
 
-
-# class AdministradorSerializer(serializers.ModelSerializer):
-
-#     class Meta:
-#         model = Administrador
-#         fields = ('__all__')
-
-
 class ConfiguracionCvSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -30,8 +22,6 @@ class UsuarioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Usuario()
         fields = ('id_user', 'is_staff', 'username', 'first_name', 'last_name', 'password')
-        # extra_kwargs = {'password' : {'write_only': True, 'required': True}}
-
     def save(self):
         user = Usuario(
                     id_user=self.validated_data['id_user'],
@@ -43,6 +33,7 @@ class UsuarioSerializer(serializers.ModelSerializer):
         user.set_password(password)
         user.save()
         return user
+
 
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField()
@@ -65,24 +56,13 @@ class LoginSerializer(serializers.Serializer):
             raise exceptions.ValidationError("No se deben dejar campos sin llenar")
         return data
 
+
 class ConfiguracionCv_PersonalizadoSerializer(serializers.ModelSerializer):
     class Meta:
         model = ConfiguracionCv_Personalizado
         fields = '__all__'
         
 
-
-# class AppointmentSerializer(serializers.ModelSerializer):
-#     customer = ConfiguracionCv_PersonalizadoSerializer(required=False, allow_null=True)
-
-#     class Meta:
-#         model = ConfiguracionCv_Personalizado
-#         fields = ('id', 'customer', 'status', 'etc...')
-#         related_object = 'customer'
-
-# class ConfiguracionUsuario_PersonalizadoSerializer(ConfiguracionCv_PersonalizadoSerializer):
-#     configuracion = ConfiguracionCv_PersonalizadoSerializer(many=False, read_only=True)
-#     asignacion = DocenteSerializer(many=False, read_only=True)
 class BloqueSerializer(serializers.ModelSerializer):
     
     class Meta:
