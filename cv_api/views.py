@@ -331,12 +331,12 @@ def PdfCompleto(request, id):
 def DocCompleto(request, id):
     docente, listaFinal = InformacionConfCompleto(id)
     logo = str(settings.BASE_DIR) + '/cv_api/templates/img/logoutpl.png'
-    img_template = str(settings.BASE_DIR) + '/cv_api/templates/img/nieve.jpg'
+    img_template = str(settings.BASE_DIR) + '/cv_api/templates/img/docente.jpg'
     response = HttpResponse(content_type='application/msword')
     response['Content-Disposition'] = 'attachment; filename="cv.docx"'
 
     doc = DocxTemplate(str(settings.BASE_DIR) + '/cv_api/templates/docx_filename.docx')
-    f = open(str(settings.BASE_DIR) + '/cv_api/templates/img/nieve.jpg','wb')
+    f = open(str(settings.BASE_DIR) + '/cv_api/templates/img/docente.jpg','wb')
     f.write(urllib.request.urlopen(docente['foto_web_low']).read()) 
 
     myimage = InlineImage(doc, image_descriptor=logo, width=Mm(15), height=Mm(25))
@@ -513,12 +513,12 @@ def PdfResumido(request, id):
 def DocResumido(request, id):
     docente, listaFinal = InformacionConfResumida(id)
     logo = str(settings.BASE_DIR) + '/cv_api/templates/img/logoutpl.png'
-    img_template = str(settings.BASE_DIR) + '/cv_api/templates/img/nieve.jpg'
+    img_template = str(settings.BASE_DIR) + '/cv_api/templates/img/docente.jpg'
     response = HttpResponse(content_type='application/msword')
     response['Content-Disposition'] = 'attachment; filename="cv_resumido.docx"'
 
     doc = DocxTemplate(str(settings.BASE_DIR) + '/cv_api/templates/docx_filename.docx')
-    f = open(str(settings.BASE_DIR) + '/cv_api/templates/img/nieve.jpg','wb')
+    f = open(str(settings.BASE_DIR) + '/cv_api/templates/img/docente.jpg','wb')
     f.write(urllib.request.urlopen(docente['foto_web_low']).read()) 
 
     myimage = InlineImage(doc, image_descriptor=logo, width=Mm(15), height=Mm(25))
@@ -705,13 +705,13 @@ def PdfPersonalizado(request, id, nombre_cv, cvHash):
 def DocPersonalizado(request, id, nombre_cv, cvHash):
     docente, listaFinal = InformacionConfPersonalizada(id, nombre_cv, cvHash)
     logo = str(settings.BASE_DIR) + '/cv_api/templates/img/logoutpl.png'
-    img_template = str(settings.BASE_DIR) + '/cv_api/templates/img/nieve.jpg'
+    img_template = str(settings.BASE_DIR) + '/cv_api/templates/img/docente.jpg'
 
     response = HttpResponse(content_type='application/msword')
     response['Content-Disposition'] = 'attachment; filename="cv_personalizado.docx"'
 
     doc = DocxTemplate(str(settings.BASE_DIR) + '/cv_api/templates/docx_filename.docx')
-    f = open(str(settings.BASE_DIR) + '/cv_api/templates/img/nieve.jpg','wb')
+    f = open(str(settings.BASE_DIR) + '/cv_api/templates/img/docente.jpg','wb')
     f.write(urllib.request.urlopen(docente['foto_web_low']).read()) 
 
     myimage = InlineImage(doc, image_descriptor=logo, width=Mm(15), height=Mm(25))
@@ -843,6 +843,7 @@ def informacionCsv(request,bloque, idDocente):
 # -------------------------------------------------------GENERACION DE BIBTEX----------------------------------------------
 def InformacionBibTex(request, bloque, idDocente):
     listaFinalArchivos = InformacionCompletaArchivos(bloque, idDocente)
+    print("listafinalarchivos", listaFinalArchivos)
     r = requests.get(f'https://sica.utpl.edu.ec/ws/api/docentes/{idDocente}/',
                      headers={'Authorization': 'Token 54fc0dc20849860f256622e78f6868d7a04fbd30'})
     docente = r.json()
@@ -857,6 +858,8 @@ def InformacionBibTex(request, bloque, idDocente):
         listaVacia.remove(bloque)
     except:
         print("")
+
+    print("listavacia", listaVacia)
 
     diccionario = dict()
     lines = []
@@ -910,8 +913,8 @@ def InformacionBibTex(request, bloque, idDocente):
         for v, a in k.items():
           if a.startswith('['):
             lines.remove(k)
-    
     response = BibDatabase()
+    
     response.entries = lines 
     writer = BibTexWriter()
     data = writer.write(response)
